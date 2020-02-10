@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<data>
+    <container name="container_1">
+        <test1> "This is a test" </test1>
+    </container>
+
+    <container name="container_2">
+        <test1> "This is the second dest" </test1>
+    </container>
+</data>

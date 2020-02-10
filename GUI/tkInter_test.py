@@ -1,6 +1,20 @@
-import Tkinter as tk  # Works on 2.7
+#! /usr/bin/env python
+
+from __future__ import print_function
+
+# ROS imports
+import rospy
+from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import String
+import json
+
+#  Graphics imports
+import Tkinter as tk  #  Works on 2.7
 import ttk
 from customNotebook import CustomNotebook
+
+#  Helper class imports
+from sorting_object_class import SortableObject
 
 from Tkinter import *
 from ttk import *
@@ -9,7 +23,7 @@ from ttk import *
 
 class Application(Frame):
     
-    m_tabs = 0  # The number of tabs currently open
+    m_tabs = 0  #  The number of tabs currently open
 
     def say_hi(self, label):
         print("hi there, everyone! %s" % (self.var))
@@ -17,16 +31,48 @@ class Application(Frame):
         label.configure(text=self.var)
 
 
+    def send_object_pos(self, obj_position, container_position):
+
+        final_dict = dict({"object": 1, "start": obj_position, "container": container_position})
+
+        message = str(final_dict)
+
+        print(json.dumps(obj_position))
+
+
     ##  Create widgets which are not specific to tabs
+    #   TODO: Replace the QUIT button with a RUN button, talks to ik solver
     def createWidgets(self):
+
+        final_pos = PoseStamped()
+
+        #  Create header for message
+        final_pos.header.seq = 1
+        final_pos.header.stamp = rospy.Time.now()
+        final_pos.header.frame_id = 'map'
+
+        #  Final Positions
+        final_pos.pose.position.x = 0.704020578925
+        final_pos.pose.position.y = 0.6890
+        final_pos.pose.position.z = 0.455
+
+        #  Final Orientation
+        final_pos.pose.orientation.x = 0.0
+        final_pos.pose.orientation.y = 0.0
+        final_pos.pose.orientation.z = 0.0
+        final_pos.pose.orientation.w = 1.0
+
         style = ttk.Style()  # Create style for buttons
         style.configure("WR.TButton", foreground="white", background="red", width=20, height=20)
+
+        self.run = ttk.Button(self, text="RUN", command= lambda: self.send_object_pos(final_pos, final_pos))
+        self.run.pack(side='left', ipadx=10, padx=30)
 
         self.QUIT = ttk.Button(self, text="Quit", style="WR.TButton", command=self.quit)
         self.QUIT.pack(side='left', ipadx=10, padx=30)
         
-        self.test_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.note))
-        self.test_button.pack(side='right', ipadx=10, padx=30)
+        self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.note))
+        self.add_container_button.pack(side='right', ipadx=10, padx=30)
 
 
 
@@ -58,16 +104,29 @@ class Application(Frame):
     ##  NOTE: Dont use pack() if grid is used in the same method
     def instantiate_tab(self, tab):
         
-        self.count_label = ttk.Label(tab, text="Test label").grid(row=5, column=7)
+        # self.count_label = ttk.Label(tab, text="Test label")
+        self.object1 = IntVar()
+        self.object2 = IntVar()
+        self.object3 = IntVar()
+
+        Checkbutton(tab, text="obj1", variable=self.object1, onvalue=1, offvalue=0, command=None).grid(row=1, column=9)  # The command is what will be called when the box is pressed
+        Checkbutton(tab, text="obj2", variable=self.object2, onvalue=1, offvalue=0, command=None).grid(row=2, column=9)
+        Checkbutton(tab, text="obj3", variable=self.object3, onvalue=1, offvalue=0, command=None).grid(row=3, column=9)
+
+
         # self.count_label.pack()
 
         # self.test_button = ttk.Button(tab, text="Add Container", command= lambda: self.create_tab(self.note)).grid(row=3, column=7)
         # self.test_button.pack({"side":"right"})
 
 
-
-
     def __init__(self, master=None):
+        #  ros initialization
+        rospy.init_node("main_gui_node")
+        publisher = rospy.Publisher('move_to_dest/goal', PoseStamped, queue_size=10)
+
+
+        #  Graphics initialization
         Frame.__init__(self, master)
 
         #  Create Notebook 
@@ -88,10 +147,8 @@ class Application(Frame):
         master.title('ROS TEST UI')
         
 
-
-
-root = Tk()  # The window which will contain all components
-root.geometry('750x500')  # Default size of window 
+root = Tk()  #  The window which will contain all components
+root.geometry('750x500')  #  Default size of window 
 
 app = Application(master=root)
 

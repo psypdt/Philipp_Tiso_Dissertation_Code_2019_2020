@@ -52,12 +52,13 @@ def main():
 
     rospy.sleep(1)  # Timeout thread to make sure that subscriber has chance to subscribe to the topic
 
-    send = SortableObject(obj_name='thing', obj_start=start, obj_end=final_pos)
+    # send = SortableObject(obj_name='thing', obj_start=start, obj_end=final_pos)
 
 
-    publisher.publish([start, final_pos])
+    send = SortableObjectMsg(name='my thing', start_pose=start, end_pose=final_pos)
+    publisher.publish(send)
 
-    # print("Sent data: {}".format(send))
+    print("Sent data: {}".format(send))
 
 
 if __name__ == "__main__":

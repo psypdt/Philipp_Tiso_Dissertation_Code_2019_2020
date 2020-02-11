@@ -42,7 +42,7 @@ from std_msgs.msg import (
 )
  
 from sensor_msgs.msg import JointState
-from intera_examples.msg import SortableObject as SortableObjectMsg
+from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
 
 from intera_core_msgs.srv import (
     SolvePositionIK,
@@ -54,7 +54,8 @@ from intera_core_msgs.srv import (
 #  TODO Look into using arm calibration, could it be useful here?
 #  TODO Need to find a way to do collision avoidance  
 #  NOTE This function will retun True if a path was found or False if it failed
-def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.3974473], i_TargetOrientation=[0.704020578925,0.710172716916,0.00244101361829,0.00194372088834], i_UseAdvanced=False):
+def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
+    # i_TargetPose=[0.4950628,-0.0002616,0.3974473], i_TargetOrientation=[0.704020578925,0.710172716916,0.00244101361829,0.00194372088834],
     """ 
     i_Limb
         default: "right"
@@ -78,6 +79,10 @@ def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.
         -- Will run some optimization after the IK result has been calculated
     """
 
+    if i_Pose == None:
+        rospy.logerr("Error: flex_ik_service_client received 'None' in arg 'i_Pose' for target position")
+        return False
+
     #  Initialize IK service
     service_name = "ExternalTools/" + i_Limb + "/PositionKinematicsNode/IKService"
     ik_ServiceClient = rospy.ServiceProxy(service_name, SolvePositionIK)  # Creates a handle to some service that we want to invoke methods on, in this case the SolvePositionIK
@@ -90,24 +95,7 @@ def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.
     goal_positions = {
         'right': PoseStamped(
             header=msg_header,
-            pose=Pose(
-                position=Point(
-                    x=i_TargetPose[0],
-                    y=i_TargetPose[1],
-                    z=i_TargetPose[2],
-                ),
-                #  A Quaternion descibes the rotation of an object in 3D, we need 4D numbers to represent this (i^2 = j^2 = k^2 = ijk = -1)
-                #  if w = 1, then there is no rotation around the x/y/z (roll/pitch/yaw) in radians
-                #  Apparently, w is the angle (probably in rads) by which we rotate around an axis (TODO: find out which axis)
-                #  x,y,z DONT REPRESENT THE AXIS. Basically all 4 numbers do the same thing, values represent a point on the unit circle in 2D
-                #  TODO: Watch Humane Rigging 03 - 3D Bouncy Ball 05 - Quaternion Rotation
-                orientation=Quaternion(
-                    x=i_TargetOrientation[0],
-                    y=i_TargetOrientation[1],
-                    z=i_TargetOrientation[2],
-                    w=i_TargetOrientation[3],
-                ),
-            ),
+            pose=i_Pose
         ),
     }
 
@@ -220,30 +208,33 @@ def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.
 #  Data contains both the start and the end possition respectively
 def test_callback(data):
     # input_position = [0.5, -0.3, 0.1]
-    
-    print(data.start_pose.position)
-
-    input_position = data
 
     # input_orientation = [0, 1, 1, 0]  #  It looks like this is a normalized form of the quaternions
     input_orientation = [0.704020578925,0.710172716916,0.00244101361829,0.00194372088834]
 
     tmp_arm = intera_interface.Limb('right')
+
+    print(data)
     
     #  NOTE For the simulation, have timeout=5 and speed=0.2 otherwise it segfaults, or timeout=2, speed=0.28
     tmp_arm.move_to_neutral(timeout=15, speed=0.25)  #  The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
     rospy.sleep(2)
 
-    if flex_ik_service_client(i_TargetPose=input_position,i_TargetOrientation=input_orientation, i_UseAdvanced=True):
-        rospy.loginfo("Route was successfully executed")
-
-        rospy.loginfo("Publishing...")
-        mesg = "Done"
-        pub.publish(mesg)
-        rate.sleep()
+    #  Move to the object which will be picked up
+    if flex_ik_service_client(i_Pose=data.start_pose, i_UseAdvanced=True):
+        rospy.loginfo("Route to object was successfully executed")
+        rospy.sleep(2)
 
     else:
-        rospy.logwarn("Route Execution Failed: Invalid target position")
+        rospy.logwarn("Route Execution Failed: Invalid target object position")
+
+
+    #  Move the object to the location where the container is
+    if flex_ik_service_client(i_Pose=data.end_pose, i_UseAdvanced=True):
+        rospy.loginfo("Route to container was successfully executed")
+
+    else:
+        rospy.logwarn("Route Execution Failed: Invalid target container position")
 
 
 

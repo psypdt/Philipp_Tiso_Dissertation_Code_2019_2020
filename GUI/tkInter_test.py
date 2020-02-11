@@ -4,7 +4,7 @@ from __future__ import print_function
 
 # ROS imports
 import rospy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 import json
 
@@ -14,6 +14,7 @@ import ttk
 from customNotebook import CustomNotebook
 
 #  Helper class imports
+from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
 from sorting_object_class import SortableObject
 
 from Tkinter import *
@@ -31,36 +32,29 @@ class Application(Frame):
         label.configure(text=self.var)
 
 
+    #  This method will send a SortableObjectMsg to the ik solver
     def send_object_pos(self, obj_position, container_position):
 
-        final_dict = dict({"object": 1, "start": obj_position, "container": container_position})
-
-        message = str(final_dict)
-
-        print(json.dumps(obj_position))
+        send = SortableObjectMsg('first', obj_position, container_position)
+        self.publisher.publish(send)
 
 
     ##  Create widgets which are not specific to tabs
     #   TODO: Replace the QUIT button with a RUN button, talks to ik solver
     def createWidgets(self):
 
-        final_pos = PoseStamped()
-
-        #  Create header for message
-        final_pos.header.seq = 1
-        final_pos.header.stamp = rospy.Time.now()
-        final_pos.header.frame_id = 'map'
+        final_pos = Pose()
 
         #  Final Positions
-        final_pos.pose.position.x = 0.704020578925
-        final_pos.pose.position.y = 0.6890
-        final_pos.pose.position.z = 0.455
+        final_pos.position.x = 0.704020578925
+        final_pos.position.y = 0.6890
+        final_pos.position.z = 0.455
 
         #  Final Orientation
-        final_pos.pose.orientation.x = 0.0
-        final_pos.pose.orientation.y = 0.0
-        final_pos.pose.orientation.z = 0.0
-        final_pos.pose.orientation.w = 1.0
+        final_pos.orientation.x = 0.0
+        final_pos.orientation.y = 0.0
+        final_pos.orientation.z = 0.0
+        final_pos.orientation.w = 1.0
 
         style = ttk.Style()  # Create style for buttons
         style.configure("WR.TButton", foreground="white", background="red", width=20, height=20)
@@ -123,7 +117,7 @@ class Application(Frame):
     def __init__(self, master=None):
         #  ros initialization
         rospy.init_node("main_gui_node")
-        publisher = rospy.Publisher('move_to_dest/goal', PoseStamped, queue_size=10)
+        self.publisher = rospy.Publisher('move_to_dest/goal', SortableObjectMsg, queue_size=10)
 
 
         #  Graphics initialization

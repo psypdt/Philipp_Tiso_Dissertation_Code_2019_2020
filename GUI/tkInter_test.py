@@ -16,20 +16,61 @@ from customNotebook import CustomNotebook
 #  Helper class imports
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
 from sorting_object_class import SortableObject
+import xml.etree.ElementTree as ET
 
 from Tkinter import *
 from ttk import *
 
 
+#  This method will read all objects from an xml and will return a dictionary containing said objects (including name and postition)
+def read_all_objects():
+    tree = ET.parse('object_positions.xml')
+    root = tree.getroot()
 
+    items = root.getchildren()
+
+    final_dict = {}
+
+    for item in items:
+        item_position = item.getchildren()
+
+        name = item.attrib
+
+        x = item.find('./position/x_pos').text
+        y = item.find('./position/y_pos').text
+        z = item.find('./position/z_pos').text
+
+        start = Pose()
+        start.position.x = float(x)
+        start.position.y = float(y)
+        start.position.z = float(z)
+
+        obj = SortableObject(obj_name=str(name), obj_start=start)
+
+        final_dict[str(name)] = start
+
+    return final_dict
+
+
+
+
+#  This class will detail how the application window will be constructed
 class Application(Frame):
     
     m_tabs = 0  #  The number of tabs currently open
 
     def say_hi(self, label):
-        print("hi there, everyone! %s" % (self.var))
-        self.var += 1
-        label.configure(text=self.var)
+        print("Check state is" % label)
+        # self.var += 1
+        # label.configure(text=self.var)
+
+
+    def update_selected_objects(self, name, state):
+
+        if state == 1:
+            print("State is 1, add %s to list" % name)
+        else:
+            print("State is 0, remove %s from list" % name)
 
 
     #  This method will send a SortableObjectMsg to the ik solver
@@ -103,12 +144,9 @@ class Application(Frame):
         self.object2 = IntVar()
         self.object3 = IntVar()
 
-        Checkbutton(tab, text="obj1", variable=self.object1, onvalue=1, offvalue=0, command=None).grid(row=1, column=9)  # The command is what will be called when the box is pressed
-        Checkbutton(tab, text="obj2", variable=self.object2, onvalue=1, offvalue=0, command=None).grid(row=2, column=9)
-        Checkbutton(tab, text="obj3", variable=self.object3, onvalue=1, offvalue=0, command=None).grid(row=3, column=9)
-
-
-        # self.count_label.pack()
+        Checkbutton(tab, text="obj1", variable=self.object1, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj1", self.object1.get())).grid(row=1, column=9)  # The command is what will be called when the box is pressed
+        Checkbutton(tab, text="obj2", variable=self.object2, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj2", self.object2.get())).grid(row=2, column=9)
+        Checkbutton(tab, text="obj3", variable=self.object3, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj3", self.object3.get())).grid(row=3, column=9)
 
         # self.test_button = ttk.Button(tab, text="Add Container", command= lambda: self.create_tab(self.note)).grid(row=3, column=7)
         # self.test_button.pack({"side":"right"})

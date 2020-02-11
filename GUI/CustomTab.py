@@ -3,6 +3,9 @@
 import Tkinter as tk
 import ttk
 
+from Tkinter import *
+from ttk import *
+
 
 #  This class will be used to display the list of objects
 class RosTab(ttk.Frame):
@@ -24,13 +27,13 @@ class RosTab(ttk.Frame):
 
     #  This method will set up the object selection widgets for each tab
     def setup_object_selection(self):
-        object1 = IntVar()
-        object2 = IntVar()
-        object3 = IntVar()
+        self.object1 = IntVar()
+        self.object2 = IntVar()
+        self.object3 = IntVar()
 
-        Checkbutton(tab, text="obj1", variable=self.object1, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj1", object1.get())).grid(row=1, column=9)  # The command is what will be called when the box is pressed
-        Checkbutton(tab, text="obj2", variable=self.object2, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj2", object2.get())).grid(row=2, column=9)
-        Checkbutton(tab, text="obj3", variable=self.object3, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj3", object3.get())).grid(row=3, column=9)
+        Checkbutton(self, text="obj1", variable=self.object1, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj1", self.object1.get())).grid(row=1, column=9)  # The command is what will be called when the box is pressed
+        Checkbutton(self, text="obj2", variable=self.object2, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj2", self.object2.get())).grid(row=2, column=9)
+        Checkbutton(self, text="obj3", variable=self.object3, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj3", self.object3.get())).grid(row=3, column=9)
 
 
 

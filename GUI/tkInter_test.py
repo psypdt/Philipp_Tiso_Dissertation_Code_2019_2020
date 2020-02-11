@@ -12,6 +12,7 @@ import json
 import Tkinter as tk  #  Works on 2.7
 import ttk
 from customNotebook import CustomNotebook
+from CustomTab import RosTab
 
 #  Helper class imports
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
@@ -20,6 +21,7 @@ import xml.etree.ElementTree as ET
 
 from Tkinter import *
 from ttk import *
+
 
 
 #  This method will read all objects from an xml and will return a dictionary containing said objects (including name and postition)
@@ -64,13 +66,6 @@ class Application(Frame):
         # self.var += 1
         # label.configure(text=self.var)
 
-
-    def update_selected_objects(self, name, state):
-
-        if state == 1:
-            print("State is 1, add %s to list" % name)
-        else:
-            print("State is 0, remove %s from list" % name)
 
 
     #  This method will send a SortableObjectMsg to the ik solver
@@ -118,7 +113,8 @@ class Application(Frame):
         if note.m_tabs_open == 5:
             return
 
-        tab = ttk.Frame(note)
+        tabName = "Container " + str(note.m_tabs_open)
+        tab = RosTab(note, tabName)
 
         #  Create a grid with dimensions 10x10
         for i in range(10):
@@ -126,30 +122,10 @@ class Application(Frame):
             tab.columnconfigure(i, weight=1)
             
 
-        tabName = "Container " + str(note.m_tabs_open)
         note.add(tab, text=tabName)
 
         note.m_tabs_open = note.m_tabs_open + 1  # Increment tab counter
-        
-        self.instantiate_tab(tab)
 
-
-
-    ##  This method takes in a tab instance and will add the relevant widgets to it
-    ##  NOTE: Dont use pack() if grid is used in the same method
-    def instantiate_tab(self, tab):
-        
-        # self.count_label = ttk.Label(tab, text="Test label")
-        self.object1 = IntVar()
-        self.object2 = IntVar()
-        self.object3 = IntVar()
-
-        Checkbutton(tab, text="obj1", variable=self.object1, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj1", self.object1.get())).grid(row=1, column=9)  # The command is what will be called when the box is pressed
-        Checkbutton(tab, text="obj2", variable=self.object2, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj2", self.object2.get())).grid(row=2, column=9)
-        Checkbutton(tab, text="obj3", variable=self.object3, onvalue=1, offvalue=0, command=lambda: self.update_selected_objects("obj3", self.object3.get())).grid(row=3, column=9)
-
-        # self.test_button = ttk.Button(tab, text="Add Container", command= lambda: self.create_tab(self.note)).grid(row=3, column=7)
-        # self.test_button.pack({"side":"right"})
 
 
     def __init__(self, master=None):

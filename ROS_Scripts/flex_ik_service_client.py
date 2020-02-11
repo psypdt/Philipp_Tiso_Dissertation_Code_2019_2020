@@ -35,13 +35,14 @@ from geometry_msgs.msg import (
     Point,
     Quaternion,
 )
-from std_msgs.msg import (
-    Header,
+from std_msgs.msg import ( 
+    Header, 
     String,
     Float64MultiArray,
 )
  
 from sensor_msgs.msg import JointState
+from intera_examples.msg import SortableObject as SortableObjectMsg
 
 from intera_core_msgs.srv import (
     SolvePositionIK,
@@ -49,17 +50,17 @@ from intera_core_msgs.srv import (
 )
 
 
-#  Create a more flexible IK client
+#  Create a more flexible IK client 
 #  TODO Look into using arm calibration, could it be useful here?
-#  TODO Need to find a way to do collision avoidance
+#  TODO Need to find a way to do collision avoidance  
 #  NOTE This function will retun True if a path was found or False if it failed
 def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.3974473], i_TargetOrientation=[0.704020578925,0.710172716916,0.00244101361829,0.00194372088834], i_UseAdvanced=False):
-    """
+    """ 
     i_Limb
         default: "right"
         -- The robots limb (For Sawyer there is really only one option which is 'right')
     
-    i_TargetPose
+    i_TargetPose 
         default: [  x= 0.4950628752997,
                     y= -0.000261615832271,
                     z= 0.397447307078] Curren path would probably collide with the table
@@ -80,12 +81,12 @@ def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.
     #  Initialize IK service
     service_name = "ExternalTools/" + i_Limb + "/PositionKinematicsNode/IKService"
     ik_ServiceClient = rospy.ServiceProxy(service_name, SolvePositionIK)  # Creates a handle to some service that we want to invoke methods on, in this case the SolvePositionIK
-    ik_ServiceReq = SolvePositionIKRequest()  # Create a request message that will give us the inverse kinematics for some set of joints (Note that this is done at compile time)
+    ik_ServiceReq = SolvePositionIKRequest()  # Create a request message that will give us the inverse kinematics for some set of joints (Note that this is done at compile time) 
     msg_header = Header(stamp=rospy.Time.now(), frame_id='base')  # Generates a Header for the message (Think of HTTP)
 
     #  Set the goal positions for the limb that we specified (I'm pretty sure that it's for the last joint right_j6)
-    #  Set the header that we time stamped
-    #  Add Pose object that contains a Point and Quaternion
+    #  Set the header that we time stamped 
+    #  Add Pose object that contains a Point and Quaternion 
     goal_positions = {
         'right': PoseStamped(
             header=msg_header,
@@ -155,9 +156,9 @@ def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.
         goal = JointState()
 
         #  This is the subset of joints that make up the null space "Joints A, B, C ... can try to move, but can't affect the result"
-        goal.name = ['right_j1', 'right_j2', 'right_j3']
+        goal.name = ['right_j1', 'right_j2', 'right_j3']  
         goal.position = [0.1, -0.3, 0.5]  #  If these possitions are encountered, try to do some optimisation
-        ik_ServiceReq.nullspace_goal.append(goal)
+        ik_ServiceReq.nullspace_goal.append(goal) 
 
         #  TODO Figure out what this means, and why the null space gain must be [0.0, 1.0] or by default 0.4 if its empty
         ik_ServiceReq.nullspace_gain.append(0.4)
@@ -174,7 +175,7 @@ def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.
 
     try:
         rospy.wait_for_service(service_name, timeout=5.0)  #  Waits for the service (5 seconds), creates the service if it doesn't already exist
-        response = ik_ServiceClient(ik_ServiceReq)  #  Get the response from the client, contains the joint positions
+        response = ik_ServiceClient(ik_ServiceReq)  #  Get the response from the client, contains the joint positions  
     except (rospy.ServiceException, rospy.ROSException), ex:
         rospy.logerr("Service Call Failed: %s" % (ex,))
         return False
@@ -215,19 +216,17 @@ def flex_ik_service_client(i_Limb="right", i_TargetPose=[0.4950628,-0.0002616,0.
 
 
 
-#  This function gets called as soon as we get some data from the "destination_coordinate_topic" topic
+#  This function gets called as soon as we get some data from the "move_to_dest/goal" topic
+#  Data contains both the start and the end possition respectively
 def test_callback(data):
     # input_position = [0.5, -0.3, 0.1]
     
-    print('Got data: {}'.format(data))
+    print(data.start_pose.position)
 
-    input_position = [data.pose.position.x, data.pose.position.y, data.pose.position.z]
-
-    print(input_position)
+    input_position = data
 
     # input_orientation = [0, 1, 1, 0]  #  It looks like this is a normalized form of the quaternions
     input_orientation = [0.704020578925,0.710172716916,0.00244101361829,0.00194372088834]
-    input_orientation = [data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]
 
     tmp_arm = intera_interface.Limb('right')
     
@@ -262,50 +261,20 @@ def main():
     and if so, the corresponding joint angles.
     """
     #  Create a publisher that will publish strings to the ik_status topic
-    pub = rospy.Publisher('ik_status', String, queue_size=10)
+    pub = rospy.Publisher('ik_status', String, queue_size=10)  
 
     rospy.init_node("rsdk_flex_ik_service_client")
     rate = rospy.Rate(10)  #  Publishing rate in Hz
 
-    # Starts-up/enables the robot
+    # Starts-up/enables the robot 
     rs = intera_interface.RobotEnable(CHECK_VERSION)
     init_state = rs.state().enabled
     rs.enable()
 
-    subscriber = rospy.Subscriber('move_to_dest/goal', PoseStamped, callback=test_callback)
+    #  Create a subscriber so that we can send info to the robot (a list of floats in this case)
+    sub = rospy.Subscriber('move_to_dest/goal', SortableObjectMsg, callback=test_callback)
     rospy.spin()
-    
-    # #  Create a subscriber so that we can send info to the robot (a list of floats in this case)
-    # # sub = rospy.Subscriber('destination_coordinate_topic', Float64MultiArray, callback=test_callback)
-    # # rospy.spin()
-    
 
-    # ###########################################################################################################
-    # #
-    # # TODO: This stuff below will be put into a function that gets invoked when a destination is received
-    # #
-    # ###########################################################################################################
-
-    # input_position = [0.5, -0.3, 0.1]
-    # # input_orientation = [0, 1, 1, 0]  #  It looks like this is a normalized form of the quaternions
-    # input_orientation = [0.704020578925,0.710172716916,0.00244101361829,0.00194372088834]
-
-    # tmp_arm = intera_interface.Limb('right')
-    
-    # #  NOTE For the simulation, have timeout=5 and speed=0.2 otherwise it segfaults, or timeout=2, speed=0.28
-    # tmp_arm.move_to_neutral(timeout=5, speed=0.2)  #  The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
-    # rospy.sleep(2)
-
-    # if flex_ik_service_client(i_TargetPose=input_position,i_TargetOrientation=input_orientation, i_UseAdvanced=True):
-    #     rospy.loginfo("Route was successfully executed")
-
-    #     rospy.loginfo("Publishing...")
-    #     mesg = "Done"
-    #     pub.publish(mesg)
-    #     rate.sleep()
-
-    # else:
-    #     rospy.logwarn("Route Execution Failed: Invalid target position")
 
 
 if __name__ == '__main__':

@@ -1,3 +1,0 @@
-string name
-geometry_msgs/PoseStamped start_pose
-geometry_msgs/PoseStamped end_pose

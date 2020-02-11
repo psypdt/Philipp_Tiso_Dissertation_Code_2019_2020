@@ -8,13 +8,15 @@ find_package(catkin
   actionlib
   sensor_msgs
   control_msgs
+  std_msgs
+  geometry_msgs
   trajectory_msgs
   cv_bridge
   dynamic_reconfigure
   intera_core_msgs
   intera_motion_msgs
   intera_interface
-  std_msgs
+  geometry_msgs
   message_generation
 )
 
@@ -37,21 +39,28 @@ generate_dynamic_reconfigure_options(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  intera_core_msgs
+  geometry_msgs
+  trajectory_msgs
+  intera_motion_msgs
 )
 
 catkin_package(
   CATKIN_DEPENDS
   rospy
   actionlib
+  std_msgs
   sensor_msgs
   control_msgs
   trajectory_msgs
+  geometry_msgs
   cv_bridge
   dynamic_reconfigure
   intera_core_msgs
   intera_motion_msgs
   intera_interface
   message_runtime
+  message_generation
 )
 
 install(

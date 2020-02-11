@@ -31,7 +31,9 @@
   <build_depend>intera_core_msgs</build_depend>
   <build_depend>intera_motion_msgs</build_depend>
   <build_depend>intera_interface</build_depend>
+  <build_depend>geometry_msgs</build_depend>
   <build_depend>message_generation</build_depend>  <!-- Added to generate custom msg-->
+  <build_depend>std_msgs</build_depend>
 
   <run_depend>rospy</run_depend>
   <run_depend>actionlib</run_depend>
@@ -44,7 +46,9 @@
   <run_depend>intera_motion_msgs</run_depend>
   <run_depend>intera_interface</run_depend>
   <run_depend>joystick_drivers</run_depend>
-
+  <run_depend>geometry_msgs</run_depend>
   <run_depend>message_runtime</run_depend>  <!-- Added to generate custom msg-->
+  <run_depend>std_msgs</run_depend>
+  <run_depend>message_generation</run_depend>
 
 </package>

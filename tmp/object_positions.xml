@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+
+<root>
+    <object name="obj1">
+        <position>
+            <x_pos>0.50402</x_pos>
+            <y_pos>0.6890</y_pos>
+            <z_pos>0.455</z_pos>
+        </position>
+    </object>
+
+    <!-- <object name="obj2">
+        <position>
+            <x_pos>0.40402</x_pos>
+            <y_pos>0.290</y_pos>
+            <z_pos>0.75</z_pos>
+        </position>
+    </object> -->
+
+    <object name="obj3">
+        <position>
+            <x_pos>0.70402</x_pos>
+            <y_pos>0.190</y_pos>
+            <z_pos>0.85</z_pos>
+        </position>
+    </object>
+</root>

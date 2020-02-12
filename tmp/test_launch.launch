@@ -1,0 +1,19 @@
+<launch>
+    <!-- <node name="webcam_test" pkg="intera_examples" type="webcam_test.py" output="screen"/> This will launch the node where the edge detection is hosted -->
+    <!-- <node name="simple_gripp_sub" pkg="intera_examples" type="simple_gripper_action.py" output="screen"/> -->
+    <!-- <node name="internal_cam_publisher" pkg="intera_examples" type="camera_publisher.py" output="screen"/> -->
+    <!-- <node name="internal_cam_subscriber" pkg="intera_examples" type="simple_camera_subscriber.py" output="screen"/> -->
+    <node name="main_gui_node" pkg="intera_examples" type="tkInter_test.py" output="screen"/>
+    <node name="rsdk_flex_ik_service_client" pkg="intera_examples" type="flex_ik_service_client.py" output="screen"/>
+
+
+    <!-- We may want to use another pre-existing launch file in our launch file, say the kinect openni one, lets to that here -->
+    <!-- include file="$(find openni_launch)/launch/openni.launch"/ -->
+    <!-- NOTE: Need to do rosrun rqt_reconfigure rqt_reconfigure and then enable "depth_registration" -->
+
+    <!-- node name="kinect_disparity_image" pkg="image_view" type="disparity_view" args="image:=/camera/depth_registered/disparity"/ -->
+    <!-- node name="kinect_rgb_image" pkg="image_view" type="image_view" args="image:=/camera/rgb/image_color"/ -->
+
+    <!-- node name="kinect_test_subscriber" pkg="intera_examples" type="kinect_test.py"/ -->
+
+</launch>

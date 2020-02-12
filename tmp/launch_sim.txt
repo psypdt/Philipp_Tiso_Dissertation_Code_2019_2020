@@ -1,0 +1,23 @@
+//SHELL 1 where the simulation is hosted
+
+cd ~/ros_ws1
+./intera.sh sim  //sim can be any name that we want for the simulation name
+source devel/setup.bash
+catkin_make // DONT NEED THIS
+roslaunch sawyer_gazebo sawyer_world.launch  // This launches the gazebo simulation
+
+roslaunch sawyer_gazebo sawyer_world.launch electric_gripper:=true // Use this to launch sawyer with the gripper
+
+// If exit code 255 is emitted, disconnect (ctrl+d) SHELL 2 and do > killall gzserver and > killall gzclient, then restart the sim with (./intera.sh sim) and relaunch the world (SHELL 1)
+
+
+Note: Place your scripts into /home/philipp/ros_ws1/src/intera_sdk/intera_examples/scripts becasue the other packages arn't being recognized
+
+
+
+// SHELL 2 where we will use rosrun to deploy scripts to sawyer
+cd ~/catkin_ws //idk why but this worked DONT NEED THIS
+cd ~/ros_ws1$
+./intera.sh sim // sim is whatever name we gave the simulation in shell 1
+source devel/setup.bash
+rosrun intera_examples <file.py> // the usual

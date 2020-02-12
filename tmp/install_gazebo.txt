@@ -1,0 +1,36 @@
+1)  curl -sSL http://get.gazebosim.org:80 | sh   // Idk if we actually need it
+
+
+2) sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+
+
+3) curl -sSL http://get.gazebosim.org:80 | sh
+
+
+4) wget  http://packages.osrfoundation.org/gazebo.key
+
+
+5) sudo apt-key add gazebo.key
+
+
+6) sudo apt-get update && sudo apt-get upgrade
+
+
+7) sudo apt install gazebo7
+
+
+
+
+Honestly, idk if this even makes sense
+==========================================================================================
+
+n) sudo apt-get install gazebo7 ros-kinetic-qt-build ros-kinetic-gazebo-ros-control ros-kinetic-gazebo-ros-pkgs ros-kinetic-ros-control ros-kinetic-control-toolbox ros-kinetic-realtime-tools ros-kinetic-ros-controllers ros-kinetic-xacro python-wstool ros-kinetic-tf-conversions ros-kinetic-kdl-parser ros-kinetic-sns-ik-lib
+
+
+n+1) wstool merge sawyer_simulator/sawyer_simulator.rosinstall
+
+
+n+2) wstool update
+
+
+

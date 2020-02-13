@@ -20,11 +20,12 @@ from ttk import *
 #  This class will be used to display the list of objects
 class RosContainerTab(ttk.Frame):
     
-    def __init__(self, parent=None, i_container=None, i_location=None):
+    ##  TODO: Implement default behaviour when a containers location is None, where should the arm go?
+    def __init__(self, parent=None, i_container=None):
         ttk.Frame.__init__(self, parent)
 
-        self.m_container_pose = i_location  # The position where the container is located
         self.m_container_name = i_container
+        self.m_container_pose = None  # The position where the container is located, None by default
         self.m_selected_objects_dict = {}  # Dictionary containing all selected objects
         self.m_all_objects = self.read_all_objects()  # Dictionary containing all objects from xml file (name : SortableObject)
         self.m_checkbox_state_list = []  # List containing all checkbox states
@@ -43,9 +44,14 @@ class RosContainerTab(ttk.Frame):
         
         full_path = os.path.join(dir_path, filename + suffix)
 
-        with open(full_path, 'rb') as xml_file:
-            tree = ET.parse(xml_file)
-        
+        try:
+            with open(full_path, 'rb') as xml_file:
+                tree = ET.parse(xml_file)
+        except Exception as e:
+            print(e)
+            print("Unable to find %s" % full_path)
+            return None
+
         root = tree.getroot()
 
         items = root.getchildren()
@@ -61,12 +67,12 @@ class RosContainerTab(ttk.Frame):
             y = item.find('./position/y_pos').text
             z = item.find('./position/z_pos').text
 
-            start = Pose()
-            start.position.x = float(x)
-            start.position.y = float(y)
-            start.position.z = float(z)
+            obj_position = Pose()
+            obj_position.position.x = float(x)
+            obj_position.position.y = float(y)
+            obj_position.position.z = float(z)
 
-            obj = SortableObject(obj_name=str(name['name']), obj_start=start, obj_end=self.m_container_pose)
+            obj = SortableObject(obj_name=str(name['name']), obj_start=obj_position, obj_end=self.m_container_pose)
             final_dict[str(name['name'])] = obj
 
         return final_dict
@@ -111,9 +117,6 @@ class RosContainerTab(ttk.Frame):
             self.add_object(name, obj)
         else:
             self.remove_object(name)
-
-        for e in self.m_selected_objects_dict.values():
-            print(type(e))
 
 
 

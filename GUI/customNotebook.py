@@ -1,9 +1,16 @@
+#! /user/bin/env python
+
+import rospy
+from geometry_msgs.msg import Pose
+
 import Tkinter as tk
 import ttk
 
+import os
+import xml.etree.ElementTree as ET
+
 from Tkinter import *
 from ttk import *
-
 
 
 
@@ -15,7 +22,7 @@ from ttk import *
 class CustomNotebook(ttk.Notebook):
 
     __initialized = False
-    m_tabs_open = 0
+    m_tabs_open = 1
 
 
     def __init__(self, *args, **kwargs):
@@ -27,21 +34,73 @@ class CustomNotebook(ttk.Notebook):
             ttk.Notebook.__init__(self, *args, **kwargs)
 
             self.__active = None
-            self.__tabs_open = 0
+            self.__tabs_open = 0  # Not sure why this is needed
 
             self.m_all_open_tabs_dict = dict()
+            self.m_all_containers_dict = self.read_all_containers()  # Dictionary containing all {container : position} pairs
+            self.m_unused_containers_dict = self.m_all_containers_dict  # Dictionary of all unused containers 
 
             self.bind(sequence="<ButtonPress-1>", func=self.on_close_press, add=True)  # This binds the instance to an event listener, it receives an event, calls a specific callback method and the "add" flag denotes if the specified function replaces the normal behaviour
             self.bind(sequence="<ButtonRelease-1>", func=self.on_close_release)
 
 
 
-    ##  This method will be used to add tabs to the notebook and add said tabs to a list of active tabs
-    def add_tab(self, child, **kw):
-        ttk.Notebook.add(self, child, **kw)
+
+
+    #  This method will read all containers from an xml and will return a dictionary containing its name and postition
+    #  TODO: Not sure if Pose is serializable, may need to create new class for temp container object
+    def read_all_containers(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        suffix = ".xml"
+        filename = "container_positions"
         
-        tab_key = kw['text']
-        self.m_all_open_tabs_dict.update({tab_key:child})  # Save reference to tab
+        full_path = os.path.join(dir_path, filename + suffix)
+
+        try: 
+            with open(full_path, 'rb') as xml_file:
+                tree = ET.parse(xml_file)
+        except Exception as e:
+                print(e)
+                print("Unable to find Container file at: %s" % full_path)
+                return None
+
+        root = tree.getroot()
+
+        items = root.getchildren()
+
+        final_dict = {}
+
+        for item in items:
+            item_position = item.getchildren()
+
+            container_name = item.attrib['name']
+
+            x = item.find('./position/x_pos').text
+            y = item.find('./position/y_pos').text
+            z = item.find('./position/z_pos').text
+
+            container_position = Pose()
+            container_position.position.x = float(x)
+            container_position.position.y = float(y)
+            container_position.position.z = float(z)
+
+            final_dict[str(container_name)] = container_position 
+
+        return final_dict
+
+
+
+    ##  This method will be used to add tabs to the notebook and add said tabs to a list of active tabs
+    ##  This will also remove the tab from the unused tab dictionary
+    def add_tab(self, child):
+        if len(self.m_unused_containers_dict) > 0:  # Make sure that there are consumable keys
+            container_name = next(iter(self.m_unused_containers_dict))  # Get the first key from the unused tabs
+            container_position = self.m_unused_containers_dict.pop(container_name)  # Remove the item since it is now in use
+
+            child.m_container_pose = container_position
+            ttk.Notebook.add(self, child, text=container_name)  # Add the tab to the notebook
+            
+            self.m_all_open_tabs_dict.update({container_name:child})  # Save reference to tab
         
 
         
@@ -74,8 +133,8 @@ class CustomNotebook(ttk.Notebook):
         # Check if element should be closed, and that the current element is the same as the one we tracked
         if "close" in element and index == self.__active:
             rm_tab = self.tab(index)['text']  # Get the key of the tab we are closing
+            print rm_tab
             self.m_all_open_tabs_dict.pop(rm_tab)
-            print(self.m_all_open_tabs_dict)
 
             self.forget(index)
             self.event_generate("<<NotebookTabClose>>")

@@ -6,6 +6,8 @@ from __future__ import print_function
 import rospy
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
+
+import os
 import json
 
 #  Graphics imports
@@ -22,36 +24,7 @@ import xml.etree.ElementTree as ET
 from Tkinter import *
 from ttk import *
 
-
-
-#  This method will read all containers from an xml and will return a dictionary containing its name and postition
-#  TODO: Not sure if Pose is serializable, may need to create new class for temp container object
-def read_all_containers():
-    tree = ET.parse('object_positions.xml')
-    root = tree.getroot()
-
-    items = root.getchildren()
-
-    final_dict = {}
-
-    for item in items:
-        item_position = item.getchildren()
-
-        name = item.attrib
-
-        x = item.find('./position/x_pos').text
-        y = item.find('./position/y_pos').text
-        z = item.find('./position/z_pos').text
-
-        container_position = Pose()
-        container_position.position.x = float(x)
-        container_position.position.y = float(y)
-        container_position.position.z = float(z)
-
-        final_dict[str(name)] = container_position 
-
-    return final_dict
-
+##  TODO : Find a way to send a shutdown signal to IK solver when window is closed
 
 
 
@@ -90,8 +63,7 @@ class Application(Frame):
 
 
     #  This method will send a SortableObjectMsg to the ik solver
-    #  TODO: Remove the function args since we wont need them
-    def send_object_pos(self, obj_position, container_position):
+    def send_object_pos(self):
 
         # For every tab, get m_selected_objects_dict
         for tab in self.notebook.m_all_open_tabs_dict.values():
@@ -107,23 +79,10 @@ class Application(Frame):
     #   TODO: Replace the QUIT button with a RUN button, talks to ik solver
     def createWidgets(self):
 
-        final_pos = Pose()
-
-        #  Final Positions
-        final_pos.position.x = 0.704020578925
-        final_pos.position.y = 0.6890
-        final_pos.position.z = 0.455
-
-        #  Final Orientation
-        final_pos.orientation.x = 0.0
-        final_pos.orientation.y = 0.0
-        final_pos.orientation.z = 0.0
-        final_pos.orientation.w = 1.0
-
         style = ttk.Style()  # Create style for buttons
         style.configure("WR.TButton", foreground="white", background="red", width=20, height=20)
 
-        self.run = ttk.Button(self, text="RUN", command= lambda: self.send_object_pos(final_pos, final_pos))
+        self.run = ttk.Button(self, text="RUN", command= lambda: self.send_object_pos())
         self.run.pack(side='left', ipadx=10, padx=30)
 
         self.QUIT = ttk.Button(self, text="Quit", style="WR.TButton", command=self.quit)
@@ -149,7 +108,7 @@ class Application(Frame):
             tab.rowconfigure(i, weight=1)
             tab.columnconfigure(i, weight=1)
             
-        note.add_tab(tab, text=tabName)
+        note.add_tab(tab)
         note.m_tabs_open = note.m_tabs_open + 1  # Increment tab counter
 
 

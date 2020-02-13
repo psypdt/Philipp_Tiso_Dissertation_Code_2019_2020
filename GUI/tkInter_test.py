@@ -12,7 +12,7 @@ import json
 import Tkinter as tk  #  Works on 2.7
 import ttk
 from customNotebook import CustomNotebook
-from CustomTab import RosTab
+from CustomContainerTab import RosContainerTab
 
 #  Helper class imports
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
@@ -24,8 +24,9 @@ from ttk import *
 
 
 
-#  This method will read all objects from an xml and will return a dictionary containing said objects (including name and postition)
-def read_all_objects():
+#  This method will read all containers from an xml and will return a dictionary containing its name and postition
+#  TODO: Not sure if Pose is serializable, may need to create new class for temp container object
+def read_all_containers():
     tree = ET.parse('object_positions.xml')
     root = tree.getroot()
 
@@ -42,14 +43,12 @@ def read_all_objects():
         y = item.find('./position/y_pos').text
         z = item.find('./position/z_pos').text
 
-        start = Pose()
-        start.position.x = float(x)
-        start.position.y = float(y)
-        start.position.z = float(z)
+        container_position = Pose()
+        container_position.position.x = float(x)
+        container_position.position.y = float(y)
+        container_position.position.z = float(z)
 
-        obj = SortableObject(obj_name=str(name), obj_start=start)
-
-        final_dict[str(name)] = start
+        final_dict[str(name)] = container_position 
 
     return final_dict
 
@@ -61,18 +60,47 @@ class Application(Frame):
     
     m_tabs = 0  #  The number of tabs currently open
 
-    def say_hi(self, label):
-        print("Check state is" % label)
-        # self.var += 1
-        # label.configure(text=self.var)
+
+    def __init__(self, master=None):
+        #  ros initialization
+        rospy.init_node("main_gui_node")
+        self.publisher = rospy.Publisher('move_to_dest/goal', SortableObjectMsg, queue_size=10)
+
+
+        #  Graphics initialization
+        Frame.__init__(self, master)
+
+        #  Create Notebook 
+        self.notebook = CustomNotebook()
+        
+        #  Create Tabs and add 
+        self.create_tab(self.notebook)
+        # self.homeTab = ttk.Frame(self.note)
+        # self.note.add(self.homeTab, text="Container 0")
+
+        self.notebook.pack(expand=1, fill="both")
+
+        self.m_tabs = 1
+
+        # self.instantiate_tab(self.homeTab)
+        self.pack()
+        self.createWidgets()
+        master.title('ROS TEST UI')
 
 
 
     #  This method will send a SortableObjectMsg to the ik solver
+    #  TODO: Remove the function args since we wont need them
     def send_object_pos(self, obj_position, container_position):
 
-        send = SortableObjectMsg('first', obj_position, container_position)
-        self.publisher.publish(send)
+        # For every tab, get m_selected_objects_dict
+        for tab in self.notebook.m_all_open_tabs_dict.values():
+            print("Tab %s has objects: " % tab.m_container_name)
+
+            for item in tab.m_selected_objects_dict.values():  # Get all selected SortableObjects
+                msg = item.to_sortableObjectMessage()
+                self.publisher.publish(msg)
+
 
 
     ##  Create widgets which are not specific to tabs
@@ -101,7 +129,7 @@ class Application(Frame):
         self.QUIT = ttk.Button(self, text="Quit", style="WR.TButton", command=self.quit)
         self.QUIT.pack(side='left', ipadx=10, padx=30)
         
-        self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.note))
+        self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.notebook))
         self.add_container_button.pack(side='right', ipadx=10, padx=30)
 
 
@@ -114,45 +142,19 @@ class Application(Frame):
             return
 
         tabName = "Container " + str(note.m_tabs_open)
-        tab = RosTab(note, tabName)
+        tab = RosContainerTab(parent=note, i_container=tabName)
 
         #  Create a grid with dimensions 10x10
         for i in range(10):
             tab.rowconfigure(i, weight=1)
             tab.columnconfigure(i, weight=1)
             
-
-        note.add(tab, text=tabName)
-
+        note.add_tab(tab, text=tabName)
         note.m_tabs_open = note.m_tabs_open + 1  # Increment tab counter
 
 
 
-    def __init__(self, master=None):
-        #  ros initialization
-        rospy.init_node("main_gui_node")
-        self.publisher = rospy.Publisher('move_to_dest/goal', SortableObjectMsg, queue_size=10)
-
-
-        #  Graphics initialization
-        Frame.__init__(self, master)
-
-        #  Create Notebook 
-        self.note = CustomNotebook()
-        
-        #  Create Tabs and add 
-        self.create_tab(self.note)
-        # self.homeTab = ttk.Frame(self.note)
-        # self.note.add(self.homeTab, text="Container 0")
-
-        self.note.pack(expand=1, fill="both")
-
-        self.m_tabs = 1
-
-        # self.instantiate_tab(self.homeTab)
-        self.pack()
-        self.createWidgets()
-        master.title('ROS TEST UI')
+    
         
 
 root = Tk()  #  The window which will contain all components

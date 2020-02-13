@@ -10,11 +10,13 @@ from ttk import *
 ##  SOURCE: https://stackoverflow.com/questions/39458337/is-there-a-way-to-add-close-buttons-to-tabs-in-tkinter-ttk-notebook/55888727#55888727
 
 
+
 ##  NOTE This class will be used to create a notebook where tabs can be closed via an integrated button
 class CustomNotebook(ttk.Notebook):
 
     __initialized = False
     m_tabs_open = 0
+
 
     def __init__(self, *args, **kwargs):
         if not self.__initialized:
@@ -27,9 +29,22 @@ class CustomNotebook(ttk.Notebook):
             self.__active = None
             self.__tabs_open = 0
 
+            self.m_all_open_tabs_dict = dict()
+
             self.bind(sequence="<ButtonPress-1>", func=self.on_close_press, add=True)  # This binds the instance to an event listener, it receives an event, calls a specific callback method and the "add" flag denotes if the specified function replaces the normal behaviour
             self.bind(sequence="<ButtonRelease-1>", func=self.on_close_release)
 
+
+
+    ##  This method will be used to add tabs to the notebook and add said tabs to a list of active tabs
+    def add_tab(self, child, **kw):
+        ttk.Notebook.add(self, child, **kw)
+        
+        tab_key = kw['text']
+        self.m_all_open_tabs_dict.update({tab_key:child})  # Save reference to tab
+        
+
+        
 
 
     ##  This method will called when the close tab button is pressed, it will receive the event and react
@@ -58,8 +73,13 @@ class CustomNotebook(ttk.Notebook):
 
         # Check if element should be closed, and that the current element is the same as the one we tracked
         if "close" in element and index == self.__active:
+            rm_tab = self.tab(index)['text']  # Get the key of the tab we are closing
+            self.m_all_open_tabs_dict.pop(rm_tab)
+            print(self.m_all_open_tabs_dict)
+
             self.forget(index)
             self.event_generate("<<NotebookTabClose>>")
+            
 
         self.state(["!pressed"])
         self.__active = None  # Clear tracked tab, no longer need it since we removed the tab

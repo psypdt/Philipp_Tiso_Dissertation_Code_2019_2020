@@ -3,7 +3,8 @@
 from __future__ import print_function
 
 import rospy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose
+from intera_examples.msg import SortableObjectMessage
 import json
 import simplejson
 from json import JSONEncoder
@@ -16,38 +17,11 @@ class SortableObject(object):
 
     #  This method will generate JSON when the object needs to be serialised
     def __json__(self):
-        return dict({
-            'm_name': 20,
-            'm_start_pose': {
-                'header.seq': self.m_start_pose.header.seq,
-                'header.stamp': self.m_start_pose.header.stamp,
-                'header.frame_id': self.m_start_pose.header.frame_id,
-
-                'position.x': self.m_start_pose.pose.position.x,
-                'position.y': self.m_start_pose.pose.position.y,
-                'position.z': self.m_start_pose.pose.position.z,
-
-                'orientation.x': self.m_start_pose.pose.orientation.x,
-                'orientation.y': self.m_start_pose.pose.orientation.y,
-                'orientation.z': self.m_start_pose.pose.orientation.z,
-                'orientation.w': self.m_start_pose.pose.orientation.w,
-            },
-            'm_end_pose': {
-                'header.seq': self.m_end_pose.header.seq,
-                'header.stamp': self.m_end_pose.header.stamp,
-                'header.frame_id': self.m_end_pose.header.frame_id,
-
-                'position.x': self.m_end_pose.pose.position.x,
-                'position.y': self.m_end_pose.pose.position.y,
-                'position.z': self.m_end_pose.pose.position.z,
-
-                'orientation.x': self.m_end_pose.pose.orientation.x,
-                'orientation.y': self.m_end_pose.pose.orientation.y,
-                'orientation.z': self.m_end_pose.pose.orientation.z,
-                'orientation.w': self.m_end_pose.pose.orientation.w,
-            },
-            '__python__': self.__module__+":SortableObject.from_json",
-        })
+        return {
+            'm_name': self.m_name,
+            'm_start_pose': self.m_start_pose,
+            'm_end_pose': self.m_end_pose,
+        }
 
     for_json = __json__  # To support simlejson
 
@@ -71,15 +45,29 @@ class SortableObject(object):
         self.m_start_pose = obj_start  # Where object is initially located in the work space
         self.m_end_pose = obj_end  # The location of the container where the object should be placed
 
+
         SortableObject.static_object_counter += 1  # Increment number of objects
 
-        print("Number of objects is: {}".format(SortableObject.static_object_counter))
+        # print("Number of objects is: {}".format(SortableObject.static_object_counter))
 
         if self.m_start_pose == None:
-            self.m_start_pose = PoseStamped()
+            self.m_start_pose = Pose()
         
         if self.m_end_pose == None:
-            self.m_end_pose = PoseStamped()
+            self.m_end_pose = Pose()
+
+
+    
+    #  Iterator for object such that it can be used in for x in list
+    def __iter__(self):
+        return self
+
+
+    
+    #  This method can be invoked to get a SortableObjectMessage object from the current object instance
+    def to_sortableObjectMessage(self):
+        return SortableObjectMessage(self.m_name, self.m_start_pose, self.m_end_pose)
+
 
 
 
@@ -131,7 +119,7 @@ if __name__ == '__main__':
 
     assert isinstance(obj2, SortableObject)
 
-    print(obj2.m_end_pose)
+    print(type(obj2.m_end_pose['header.frame_id']))
 
     # help(PoseStamped)
 

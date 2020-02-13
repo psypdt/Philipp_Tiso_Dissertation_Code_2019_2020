@@ -3,6 +3,7 @@
 import rospy
 from geometry_msgs.msg import Pose
 
+import os
 from sorting_object_class import SortableObject
 
 import xml.etree.ElementTree as ET
@@ -36,7 +37,15 @@ class RosContainerTab(ttk.Frame):
 
     #  This method will read all objects from an xml and will return a dictionary containing said objects (including name and postition)
     def read_all_objects(self):
-        tree = ET.parse('object_positions.xml')
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        suffix = ".xml"
+        filename = "object_positions"
+        
+        full_path = os.path.join(dir_path, filename + suffix)
+
+        with open(full_path, 'rb') as xml_file:
+            tree = ET.parse(xml_file)
+        
         root = tree.getroot()
 
         items = root.getchildren()

@@ -30,9 +30,6 @@ from ttk import *
 
 #  This class will detail how the application window will be constructed
 class Application(Frame):
-    
-    m_tabs = 0  #  The number of tabs currently open
-
 
     def __init__(self, master=None):
         #  ros initialization
@@ -96,12 +93,7 @@ class Application(Frame):
     ##  This method will be used to add tabs to the notebook
     def create_tab(self, note):
 
-        # Limited to 5 containers for now
-        if note.m_tabs_open == 5:
-            return
-
-        tabName = "Container " + str(note.m_tabs_open)
-        tab = RosContainerTab(parent=note, i_container=tabName)
+        tab = RosContainerTab(parent=note)
 
         #  Create a grid with dimensions 10x10
         for i in range(10):

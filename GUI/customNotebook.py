@@ -38,6 +38,8 @@ class CustomNotebook(ttk.Notebook):
 
             self.m_all_open_tabs_dict = dict()
             self.m_all_containers_dict = self.read_all_containers()  # Dictionary containing all {container : position} pairs
+            
+            self.m_active_container_dict = dict()  # Dictionary containing all active containers
             self.m_unused_containers_dict = self.m_all_containers_dict  # Dictionary of all unused containers 
 
             self.bind(sequence="<ButtonPress-1>", func=self.on_close_press, add=True)  # This binds the instance to an event listener, it receives an event, calls a specific callback method and the "add" flag denotes if the specified function replaces the normal behaviour
@@ -97,6 +99,8 @@ class CustomNotebook(ttk.Notebook):
             container_name = next(iter(self.m_unused_containers_dict))  # Get the first key from the unused tabs
             container_position = self.m_unused_containers_dict.pop(container_name)  # Remove the item since it is now in use
 
+            self.m_active_container_dict.update({container_name: container_position})
+
             child.m_container_pose = container_position
             ttk.Notebook.add(self, child, text=container_name)  # Add the tab to the notebook
             
@@ -133,8 +137,11 @@ class CustomNotebook(ttk.Notebook):
         # Check if element should be closed, and that the current element is the same as the one we tracked
         if "close" in element and index == self.__active:
             rm_tab = self.tab(index)['text']  # Get the key of the tab we are closing
-            print rm_tab
+            
             self.m_all_open_tabs_dict.pop(rm_tab)
+            container_position = self.m_active_container_dict.pop(rm_tab)
+
+            self.m_unused_containers_dict.update({rm_tab: container_position})
 
             self.forget(index)
             self.event_generate("<<NotebookTabClose>>")

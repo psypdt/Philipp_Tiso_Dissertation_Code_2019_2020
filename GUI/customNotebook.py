@@ -2,6 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import Pose
+from CustomContainerTab import RosContainerTab
 
 import Tkinter as tk
 import ttk
@@ -88,23 +89,31 @@ class CustomNotebook(ttk.Notebook):
 
             final_dict[str(container_name)] = container_position 
 
+            print("Added %s: " % final_dict[container_name])
+
         return final_dict
+
 
 
 
     ##  This method will be used to add tabs to the notebook and add said tabs to a list of active tabs
     ##  This will also remove the tab from the unused tab dictionary
-    def add_tab(self, child):
+    ##  This method will return the tab if successful, or None if the number of available containers is exceeded
+    def add_tab(self, parent_note):
         if len(self.m_unused_containers_dict) > 0:  # Make sure that there are consumable keys
             container_name = next(iter(self.m_unused_containers_dict))  # Get the first key from the unused tabs
             container_position = self.m_unused_containers_dict.pop(container_name)  # Remove the item since it is now in use
-
+            # print("Added tab: %s with Pose: %s" % (container_name, container_position))
             self.m_active_container_dict.update({container_name: container_position})
 
-            child.m_container_pose = container_position
-            ttk.Notebook.add(self, child, text=container_name)  # Add the tab to the notebook
+            tab = RosContainerTab(parent=parent_note, i_container_name=container_name, i_container_position=container_position)
+            tab.m_container_pose = container_position
+            ttk.Notebook.add(self, tab, text=container_name)  # Add the tab to the notebook
             
-            self.m_all_open_tabs_dict.update({container_name:child})  # Save reference to tab
+            self.m_all_open_tabs_dict.update({container_name:tab})  # Save reference to tab
+            return tab
+        return None
+
         
 
         
@@ -121,6 +130,7 @@ class CustomNotebook(ttk.Notebook):
             index = self.index("@%d,%d" % (event.x, event.y))  # Get index of tab to be closed
             self.state(['pressed'])
             self.__active = index  # Keeps track of the tab that we want to close
+
 
 
     

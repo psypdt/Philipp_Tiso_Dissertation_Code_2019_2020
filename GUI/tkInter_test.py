@@ -69,6 +69,7 @@ class Application(Frame):
             for item in tab.m_selected_objects_dict.values():  # Get all selected SortableObjects
                 msg = item.to_sortableObjectMessage()
                 self.publisher.publish(msg)
+                print(item)
 
 
 
@@ -93,15 +94,16 @@ class Application(Frame):
     ##  This method will be used to add tabs to the notebook
     def create_tab(self, note):
 
-        tab = RosContainerTab(parent=note)
+        tab = note.add_tab(parent_note=note)
 
-        #  Create a grid with dimensions 10x10
-        for i in range(10):
-            tab.rowconfigure(i, weight=1)
-            tab.columnconfigure(i, weight=1)
-            
-        note.add_tab(tab)
-        note.m_tabs_open = note.m_tabs_open + 1  # Increment tab counter
+        if tab != None:
+            #  Create a grid with dimensions 10x10
+            for i in range(10):
+                tab.rowconfigure(i, weight=1)
+                tab.columnconfigure(i, weight=1)
+                
+            # note.add_tab(tab)
+            note.m_tabs_open = note.m_tabs_open + 1  # Increment tab counter
 
 
 

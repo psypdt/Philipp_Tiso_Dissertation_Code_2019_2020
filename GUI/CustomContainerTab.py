@@ -21,11 +21,11 @@ from ttk import *
 class RosContainerTab(ttk.Frame):
     
     ##  TODO: Implement default behaviour when a containers location is None, where should the arm go?
-    def __init__(self, parent=None, i_container=None):
+    def __init__(self, parent=None, i_container_name=None, i_container_position=None):
         ttk.Frame.__init__(self, parent)
 
-        self.m_container_name = i_container
-        self.m_container_pose = None  # The position where the container is located, None by default
+        self.m_container_name = i_container_name
+        self.m_container_pose = i_container_position  # The position where the container is located, None by default
         self.m_selected_objects_dict = {}  # Dictionary containing all selected objects
         self.m_all_objects = self.read_all_objects()  # Dictionary containing all objects from xml file (name : SortableObject)
         self.m_checkbox_state_list = []  # List containing all checkbox states
@@ -71,6 +71,9 @@ class RosContainerTab(ttk.Frame):
             obj_position.position.x = float(x)
             obj_position.position.y = float(y)
             obj_position.position.z = float(z)
+
+            if self.m_container_pose == None:
+                print("Container has None pose")
 
             obj = SortableObject(obj_name=str(name['name']), obj_start=obj_position, obj_end=self.m_container_pose)
             final_dict[str(name['name'])] = obj

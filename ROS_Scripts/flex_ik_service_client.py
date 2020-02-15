@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#  TODO Find way to import desk into this sim
-
 
 """
 Intera RSDK Inverse Kinematics Example
@@ -83,6 +81,7 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
         rospy.logerr("Error: flex_ik_service_client received 'None' in arg 'i_Pose' for target position")
         return False
 
+
     #  Initialize IK service
     service_name = "ExternalTools/" + i_Limb + "/PositionKinematicsNode/IKService"
     ik_ServiceClient = rospy.ServiceProxy(service_name, SolvePositionIK)  # Creates a handle to some service that we want to invoke methods on, in this case the SolvePositionIK
@@ -99,11 +98,11 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
         ),
     }
 
-    ##################################################################################################################################################################################
+    ##############################################################################################
     #
     #  SOLVER IS SETUP TO FIND PATH USING SIMPLE INVERSE KINEMATICS
     #
-    ##################################################################################################################################################################################
+    ##############################################################################################
 
     #  Add the goal positions for the inverse kinematics
     ik_ServiceReq.pose_stamp.append(goal_positions[i_Limb])
@@ -113,16 +112,15 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
 
 
 
-    ##################################################################################################################################################################################
+    ##############################################################################################
     #
     #  SETUP THE SOLVER TO FIND A PATH USING ADVANCED INVERSE KINEMATICS
     #
-    ##################################################################################################################################################################################
+    ##############################################################################################
 
     if (i_UseAdvanced):
         rospy.loginfo("Using Advanced IK Service")
 
-        #  TODO Look into what seed actually does
         #  Define the joint seed. If the solver encounters the specified value for a joint, the it will attempt to do some optimisation
         ik_ServiceReq.seed_mode = ik_ServiceReq.SEED_USER
         seed = JointState()  #  JointState describes the state of each joint (possition, velocity, effort)
@@ -154,11 +152,11 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
         rospy.loginfo("Using Simple IK Solver")
 
 
-    ##################################################################################################################################################################################
+    ##############################################################################################
     #
     #  PASS THE INVERSE KINEMATICS REQUEST TO THE SOLVER TO GET AN ACTUAL PATH FOR THE ROBOT
     #
-    ##################################################################################################################################################################################
+    ##############################################################################################
     rospy.loginfo("Simple IKService Solver Running...")
 
     try:
@@ -206,33 +204,32 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
 
 #  This function gets called as soon as we get some data from the "move_to_dest/goal" topic
 #  Data contains both the start and the end possition respectively
-def test_callback(data):
-    # input_position = [0.5, -0.3, 0.1]
-
-    # input_orientation = [0, 1, 1, 0]  #  It looks like this is a normalized form of the quaternions
+def sort_object_callback(data):
     input_orientation = [0.704020578925,0.710172716916,0.00244101361829,0.00194372088834]
 
     tmp_arm = intera_interface.Limb('right')
 
-    print(data)
+    print("Received SortableObjectMsg: %s" % data)
     
     #  NOTE For the simulation, have timeout=5 and speed=0.2 otherwise it segfaults, or timeout=2, speed=0.28
-    tmp_arm.move_to_neutral(timeout=15, speed=0.25)  #  The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
+    tmp_arm.move_to_neutral(timeout=5, speed=0.28)  #  The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
     rospy.sleep(2)
 
     #  Move to the object which will be picked up
     if flex_ik_service_client(i_Pose=data.start_pose, i_UseAdvanced=True):
+        print("Moving to object: %s" % data.start_pose)
         rospy.loginfo("Route to object was successfully executed")
-        rospy.sleep(2)
-
+        rospy.sleep(2)  # Sleep to simulate object being picked up
     else:
         rospy.logwarn("Route Execution Failed: Invalid target object position")
 
+    tmp_arm.move_to_neutral(timeout=5, speed=0.28)
 
     #  Move the object to the location where the container is
     if flex_ik_service_client(i_Pose=data.end_pose, i_UseAdvanced=True):
+        print("Moving to container %s" % data.end_pose)
         rospy.loginfo("Route to container was successfully executed")
-
+        rospy.sleep(3)
     else:
         rospy.logwarn("Route Execution Failed: Invalid target container position")
 
@@ -241,16 +238,6 @@ def test_callback(data):
 
 
 def main():
-    """RSDK Inverse Kinematics Example
-    A simple example of using the Rethink Inverse Kinematics
-    Service which returns the joint angles and validity for
-    a requested Cartesian Pose.
-    Run this example, the example will use the default limb
-    and call the Service with a sample Cartesian
-    Pose, pre-defined in the example code, printing the
-    response of whether a valid joint solution was found,
-    and if so, the corresponding joint angles.
-    """
     #  Create a publisher that will publish strings to the ik_status topic
     pub = rospy.Publisher('ik_status', String, queue_size=10)  
 
@@ -262,8 +249,12 @@ def main():
     init_state = rs.state().enabled
     rs.enable()
 
-    #  Create a subscriber so that we can send info to the robot (a list of floats in this case)
-    sub = rospy.Subscriber('move_to_dest/goal', SortableObjectMsg, callback=test_callback)
+    #  Move to default position when the ik solver is initially launched
+    arm = intera_interface.Limb('right')
+    arm.move_to_neutral(timeout=5, speed=0.28) 
+
+    #  Create a subscriber so that we can send info to the robot
+    sub = rospy.Subscriber('move_to_dest/goal', SortableObjectMsg, callback=sort_object_callback)
     rospy.spin()
 
 

@@ -4,7 +4,7 @@ import rospy
 from geometry_msgs.msg import Pose
 
 import os
-from sorting_object_class import SortableObject
+from sortable_object_class import SortableObject
 
 import xml.etree.ElementTree as ET
 import json
@@ -106,8 +106,9 @@ class RosContainerTab(ttk.Frame):
                 return None
 
         #  Create a subframe where we can create a new canvas
+        label = Label(self, text="Sortable Objects:", font=("Helvetica", 12)).grid(row=1, column=8)
         self.frame_canvas = tk.Frame(self)
-        self.frame_canvas.grid(row=2, column=8, pady=(6,0), sticky='ne')
+        self.frame_canvas.grid(row=2, column=8, pady=(5,0), sticky='ne')
         self.frame_canvas.grid_rowconfigure(0, weight=1)
         self.frame_canvas.grid_columnconfigure(0, weight=1)
         self.frame_canvas.grid_propagate(False)
@@ -118,7 +119,7 @@ class RosContainerTab(ttk.Frame):
 
         #  Create Vertical scollbar
         self.vscrollbar = tk.Scrollbar(self.frame_canvas, orient='vertical', command=self.canvas.yview)
-        self.vscrollbar.grid(row=0, column=2, sticky="ns")
+        self.vscrollbar.grid(row=0, column=3, sticky="nsw")
         self.canvas.configure(yscrollcommand=self.vscrollbar.set)
 
         #  Create Frame that contains the boxes
@@ -141,7 +142,7 @@ class RosContainerTab(ttk.Frame):
 
 
         #  Resize the canvas frame to show exactly 1-by-5 CheckButtons and the scrollbar
-        first5columns_width = sum([self.selections[j].winfo_width() for j in range(0, 1)])
+        first5columns_width = max([self.selections[j].winfo_width() for j in range(0, rows_to_show)])  # Find the widest element and set the size to that
         first5rows_height = sum([self.selections[i].winfo_height() for i in range(0, rows_to_show)])
         
         self.frame_canvas.config(width=first5columns_width + self.vscrollbar.winfo_width(), height=first5rows_height)
@@ -163,7 +164,7 @@ class RosContainerTab(ttk.Frame):
             
             self.selections[x] = tk.Checkbutton(self.frame_selection, text=str(name), variable=obj_val, onvalue=1, offvalue=0)
             self.selections[x].bind("<Button-1>", self.update_selected_objects)  # This waits for the item to be clicked, then it invokes update_selected_objects 
-            self.selections[x].grid(row=x, column=0)
+            self.selections[x].grid(row=x, column=0, sticky="w")
         
             self.m_checkbox_state_list.append(obj_val)  # Save reference of obj to look up state
             self.m_checkbox_name_state_dict.update({obj_name : obj_val})  # Add the object name : value pair into the dictionary

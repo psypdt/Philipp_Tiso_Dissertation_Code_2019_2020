@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+
+<root>
+    <object name="Duck">
+        <type>Animal</type>
+
+        <position>
+            <x_pos>0.50402</x_pos>
+            <y_pos>0.6890</y_pos>
+            <z_pos>0.455</z_pos>
+        </position>
+    </object>
+
+    <object name="14mm Screw">
+        <type>Screw</type>
+        <position>
+            <x_pos>-0.40402</x_pos>
+            <y_pos>0.290</y_pos>
+            <z_pos>0.75</z_pos>
+        </position>
+    </object>
+
+    <object name="Clay Brick">
+        <type>Brick</type>
+        <position>
+            <x_pos>0.70402</x_pos>
+            <y_pos>0.190</y_pos>
+            <z_pos>0.85</z_pos>
+        </position>
+    </object>
+
+    <object name="Rivella Bottle">
+        <type>Bottle</type>
+        <position>
+            <x_pos>0.80402</x_pos>
+            <y_pos>-0.890</y_pos>
+            <z_pos>0.25</z_pos>
+        </position>
+    </object>
+
+    <object name="IceTea Bottle">
+        <type>Bottle</type>
+        <position>
+            <x_pos>0.80402</x_pos>
+            <y_pos>-0.890</y_pos>
+            <z_pos>0.25</z_pos>
+        </position>
+    </object>
+
+    <object name="Coca-Cola Bottle">
+        <type>Bottle</type>
+        <position>
+            <x_pos>0.80402</x_pos>
+            <y_pos>-0.890</y_pos>
+            <z_pos>0.25</z_pos>
+        </position>
+    </object>
+
+</root>

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+
+<root>
+    <container name="Bucket">
+        <position>
+            <x_pos>-0.50402</x_pos>
+            <y_pos>-0.6890</y_pos>
+            <z_pos>0.455</z_pos>
+        </position>
+    </container>
+
+    <container name="Box">
+        <position>
+            <x_pos>-0.80402</x_pos>
+            <y_pos>0.290</y_pos>
+            <z_pos>0.75</z_pos>
+        </position>
+    </container>
+
+    <container name="Cardboard Box">
+        <position>
+            <x_pos>0.10402</x_pos>
+            <y_pos>0.890</y_pos>
+            <z_pos>0.55</z_pos>
+        </position>
+    </container>
+
+
+</root>

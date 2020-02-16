@@ -2,7 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import Pose
-from CustomContainerTab import RosContainerTab
+from custom_container_tab import RosContainerTab
 
 import Tkinter as tk
 import ttk

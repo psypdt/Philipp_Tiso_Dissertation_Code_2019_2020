@@ -13,8 +13,8 @@ import json
 #  Graphics imports
 import Tkinter as tk  # Works on 2.7
 import ttk
-from customNotebook import CustomNotebook
-from CustomContainerTab import RosContainerTab
+from custom_notebook import CustomNotebook
+from custom_container_tab import RosContainerTab
 
 #  Helper class imports
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg

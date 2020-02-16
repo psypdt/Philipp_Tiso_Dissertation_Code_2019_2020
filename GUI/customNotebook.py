@@ -6,6 +6,7 @@ from CustomContainerTab import RosContainerTab
 
 import Tkinter as tk
 import ttk
+import tkMessageBox
 
 import os
 import xml.etree.ElementTree as ET
@@ -23,7 +24,7 @@ from ttk import *
 class CustomNotebook(ttk.Notebook):
 
     __initialized = False
-    m_tabs_open = 1
+    m_tabs_open = 0
 
 
     def __init__(self, *args, **kwargs):
@@ -35,7 +36,6 @@ class CustomNotebook(ttk.Notebook):
             ttk.Notebook.__init__(self, *args, **kwargs)
 
             self.__active = None
-            self.__tabs_open = 0  # Not sure why this is needed
 
             self.m_all_open_tabs_dict = dict()
             self.m_all_containers_dict = self.read_all_containers()  # Dictionary containing all {container : position} pairs
@@ -49,9 +49,7 @@ class CustomNotebook(ttk.Notebook):
 
 
 
-
     #  This method will read all containers from an xml and will return a dictionary containing its name and postition
-    #  TODO: Not sure if Pose is serializable, may need to create new class for temp container object
     def read_all_containers(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         suffix = ".xml"
@@ -64,11 +62,11 @@ class CustomNotebook(ttk.Notebook):
                 tree = ET.parse(xml_file)
         except Exception as e:
                 print(e)
-                print("Unable to find Container file at: %s" % full_path)
+                error = "Unable to find file: " + str(filename + str(suffix)) + "\n\nAt: " + str(full_path)
+                self.error_popup_msg("Can't find container file", error)
                 return None
 
         root = tree.getroot()
-
         items = root.getchildren()
 
         final_dict = {}
@@ -89,8 +87,6 @@ class CustomNotebook(ttk.Notebook):
 
             final_dict[str(container_name)] = container_position 
 
-            print("Added %s: " % final_dict[container_name])
-
         return final_dict
 
 
@@ -100,10 +96,13 @@ class CustomNotebook(ttk.Notebook):
     ##  This will also remove the tab from the unused tab dictionary
     ##  This method will return the tab if successful, or None if the number of available containers is exceeded
     def add_tab(self, parent_note):
+        if self.m_all_containers_dict == None:
+            return None
+
         if len(self.m_unused_containers_dict) > 0:  # Make sure that there are consumable keys
             container_name = next(iter(self.m_unused_containers_dict))  # Get the first key from the unused tabs
             container_position = self.m_unused_containers_dict.pop(container_name)  # Remove the item since it is now in use
-            # print("Added tab: %s with Pose: %s" % (container_name, container_position))
+            
             self.m_active_container_dict.update({container_name: container_position})
 
             tab = RosContainerTab(parent=parent_note, i_container_name=container_name, i_container_position=container_position)
@@ -111,12 +110,12 @@ class CustomNotebook(ttk.Notebook):
             ttk.Notebook.add(self, tab, text=container_name)  # Add the tab to the notebook
             
             self.m_all_open_tabs_dict.update({container_name:tab})  # Save reference to tab
+            self.m_tabs_open += 1
+            
             return tab
         return None
 
-        
 
-        
 
 
     ##  This method will called when the close tab button is pressed, it will receive the event and react
@@ -159,7 +158,7 @@ class CustomNotebook(ttk.Notebook):
 
         self.state(["!pressed"])
         self.__active = None  # Clear tracked tab, no longer need it since we removed the tab
-        self.m_tabs_open = self.m_tabs_open - 1
+        self.m_tabs_open -= 1
 
 
 
@@ -211,3 +210,10 @@ class CustomNotebook(ttk.Notebook):
             ]
         })
     ])
+
+
+
+    #  This method will create a popup if some error occures
+    def error_popup_msg(self, error_name, error_msg):
+        title = "Error: " + str(error_name)
+        tkMessageBox.showerror(title, error_msg) 

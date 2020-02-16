@@ -11,6 +11,7 @@ import json
 
 import Tkinter as tk
 import ttk
+import tkMessageBox
 
 
 from Tkinter import *
@@ -31,7 +32,7 @@ class RosContainerTab(ttk.Frame):
         self.m_checkbox_state_list = []  # List containing all checkbox states
         self.m_checkbox_name_state_dict = dict()  # Dictionary for all checkboxes
 
-        self.setup_widgets()
+        self.setup_widgets()  # Set up all graphical elements
 
 
 
@@ -49,19 +50,17 @@ class RosContainerTab(ttk.Frame):
                 tree = ET.parse(xml_file)
         except Exception as e:
             print(e)
-            print("Unable to find %s" % full_path)
+            error = "Unable to find objects in file: " + str(filename + str(suffix)) + "\n\nAt location: " + str(full_path)
+            self.error_popup_msg("Can't find object file", error)
             return None
 
         root = tree.getroot()
-
         items = root.getchildren()
 
         final_dict = dict()
 
         for item in items:
             name = item.attrib  # This is a dictionary of {key: obj_name}
-
-            # print(name['name'])
 
             x = item.find('./position/x_pos').text
             y = item.find('./position/y_pos').text
@@ -73,6 +72,8 @@ class RosContainerTab(ttk.Frame):
             obj_position.position.z = float(z)
 
             if self.m_container_pose == None:
+                error = "The container: " + str(self.m_container_name) + " doesn't have a physical position! Check the container xml file."
+                self.error_popup_msg("Container doesn't exist", error)
                 print("Container has None pose")
 
             obj = SortableObject(obj_name=str(name['name']), obj_start=obj_position, obj_end=self.m_container_pose)
@@ -98,8 +99,12 @@ class RosContainerTab(ttk.Frame):
 
 
 
+
     #  This method will setup the scrollview for the sortable objects list
     def setup_scrollable_frame(self):
+        if type(self.m_all_objects) == NoneType:
+                return None
+
         #  Create a subframe where we can create a new canvas
         self.frame_canvas = tk.Frame(self)
         self.frame_canvas.grid(row=2, column=8, pady=(6,0), sticky='ne')
@@ -120,7 +125,7 @@ class RosContainerTab(ttk.Frame):
         self.frame_selection = tk.Frame(self.canvas)
         self.canvas.create_window((0,0), window=self.frame_selection, anchor='ne')
 
-        # Add 9-by-1 CheckButtons to the frame
+        #  Add 9-by-1 CheckButtons to the frame
         rows = len(self.m_all_objects)  # Get all objects that were contained in the xml
         rows_to_show = 9
         
@@ -135,14 +140,12 @@ class RosContainerTab(ttk.Frame):
         self.frame_selection.update_idletasks()
 
 
-
-        # Resize the canvas frame to show exactly 1-by-5 CheckButtons and the scrollbar
+        #  Resize the canvas frame to show exactly 1-by-5 CheckButtons and the scrollbar
         first5columns_width = sum([self.selections[j].winfo_width() for j in range(0, 1)])
         first5rows_height = sum([self.selections[i].winfo_height() for i in range(0, rows_to_show)])
         
         self.frame_canvas.config(width=first5columns_width + self.vscrollbar.winfo_width(), height=first5rows_height)
-        self.canvas.config(scrollregion=self.canvas.bbox("all"))
-
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))  # Set the scroll region
 
 
 
@@ -150,6 +153,9 @@ class RosContainerTab(ttk.Frame):
 
     #  This method will create all checkboxes within the current container tab
     def create_selection(self): 
+        if self.m_all_objects == None:
+            return
+
         x = 0
         for _, name in enumerate(self.m_all_objects.keys(), 1):
             obj_val = tk.IntVar()
@@ -189,4 +195,10 @@ class RosContainerTab(ttk.Frame):
         if self.m_selected_objects_dict.has_key(key):
             del self.m_selected_objects_dict[key]
 
+
+
+    #  This method will create a popup if some error occures
+    def error_popup_msg(self, error_name, error_msg):
+        title = "Error: " + str(error_name)
+        tkMessageBox.showerror(title, error_msg)        
 

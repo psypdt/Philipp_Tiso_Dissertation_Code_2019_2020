@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-# ROS imports
+#  ROS imports
 import rospy
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
@@ -11,7 +11,7 @@ import os
 import json
 
 #  Graphics imports
-import Tkinter as tk  #  Works on 2.7
+import Tkinter as tk  # Works on 2.7
 import ttk
 from customNotebook import CustomNotebook
 from CustomContainerTab import RosContainerTab
@@ -24,18 +24,18 @@ import xml.etree.ElementTree as ET
 from Tkinter import *
 from ttk import *
 
+
 ##  TODO : Find a way to send a shutdown signal to IK solver when window is closed
 
 
 
-#  This class will detail how the application window will be constructed
+##  This class will detail how the application window will be constructed
 class Application(Frame):
 
     def __init__(self, master=None):
         #  ros initialization
         rospy.init_node("main_gui_node")
         self.publisher = rospy.Publisher('move_to_dest/goal', SortableObjectMsg, queue_size=10)
-
 
         #  Graphics initialization
         Frame.__init__(self, master)
@@ -45,26 +45,20 @@ class Application(Frame):
         
         #  Create Tabs and add 
         self.create_tab(self.notebook)
-        # self.homeTab = ttk.Frame(self.note)
-        # self.note.add(self.homeTab, text="Container 0")
-
         self.notebook.pack(expand=1, fill="both")
 
-        self.m_tabs = 1
-
-        # self.instantiate_tab(self.homeTab)
         self.pack()
         self.createWidgets()
+
         master.title('ROS TEST UI')
 
 
 
-    #  This method will send a SortableObjectMsg to the ik solver
+    ##  This method will send a SortableObjectMsg to the ik solver
     def send_object_pos(self):
 
-        # For every tab, get m_selected_objects_dict
+        #  For every tab, get m_selected_objects_dict
         for tab in self.notebook.m_all_open_tabs_dict.values():
-            print("Tab %s has objects: " % tab.m_container_name)
 
             for item in tab.m_selected_objects_dict.values():  # Get all selected SortableObjects
                 msg = item.to_sortableObjectMessage()
@@ -74,7 +68,7 @@ class Application(Frame):
 
 
     ##  Create widgets which are not specific to tabs
-    #   TODO: Replace the QUIT button with a RUN button, talks to ik solver
+    ##  TODO: Replace the QUIT button with a RUN button, talks to ik solver
     def createWidgets(self):
 
         style = ttk.Style()  # Create style for buttons
@@ -101,20 +95,16 @@ class Application(Frame):
             for i in range(10):
                 tab.rowconfigure(i, weight=1)
                 tab.columnconfigure(i, weight=1)
-                
-            # note.add_tab(tab)
-            note.m_tabs_open = note.m_tabs_open + 1  # Increment tab counter
 
 
 
     
         
 
-root = Tk()  #  The window which will contain all components
-root.geometry('750x500')  #  Default size of window 
+root = Tk()  # The window which will contain all components
+root.geometry('750x500')  # Default size of window 
 
 app = Application(master=root)
-
 
 app.mainloop()
 root.destroy()

@@ -16,15 +16,13 @@ from ttk import *
 
 
 
-##  SOURCE: https://stackoverflow.com/questions/39458337/is-there-a-way-to-add-close-buttons-to-tabs-in-tkinter-ttk-notebook/55888727#55888727
-
-
 
 ##  NOTE This class will be used to create a notebook where tabs can be closed via an integrated button
 class CustomNotebook(ttk.Notebook):
 
     __initialized = False
     m_tabs_open = 0
+    __sortable_batches = dict()
 
 
     def __init__(self, *args, **kwargs):
@@ -46,10 +44,12 @@ class CustomNotebook(ttk.Notebook):
             self.bind(sequence="<ButtonPress-1>", func=self.on_close_press, add=True)  # This binds the instance to an event listener, it receives an event, calls a specific callback method and the "add" flag denotes if the specified function replaces the normal behaviour
             self.bind(sequence="<ButtonRelease-1>", func=self.on_close_release)
 
+            self.construct_batch_objects()
 
 
 
-    #  This method will read all containers from an xml and will return a dictionary containing its name and postition
+
+    ##  This method will read all containers from an xml and will return a dictionary containing its name and postition
     def read_all_containers(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         suffix = ".xml"
@@ -72,7 +72,7 @@ class CustomNotebook(ttk.Notebook):
         final_dict = {}
 
         for item in items:
-            item_position = item.getchildren()
+            item_position = item.getchildren()  # TODO: Seems stale, check if this is actually needed
 
             container_name = item.attrib['name']
 
@@ -88,6 +88,45 @@ class CustomNotebook(ttk.Notebook):
             final_dict[str(container_name)] = container_position 
 
         return final_dict
+
+
+
+
+
+    ##  This method will construct all batches
+    def construct_batch_objects(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        suffix = ".xml"
+        filename = "object_positions"
+
+        full_path = os.path.join(dir_path,filename+suffix)
+
+        try:
+            with open(full_path, 'rb') as xml_file:
+                tree = ET.parse(xml_file)
+        except Exception as e:
+            print(e)
+            error = "Unable to find objects in file: " + str(filename + str(suffix)) + "\n\nAt location: " + str(full_path)
+            self.error_popup_msg("Can't find object file", error)
+            return None
+
+        root = tree.getroot()
+        objects = root.getchildren()
+
+        object_types = set([obj_type.text for obj_type in root.iter('type')])  # List of all object types in .xml
+
+
+        for obj_type in object_types:
+            print(obj_type)
+
+            for item in objects:
+                if item.find('./type').text == obj_type:
+                    print item.attrib['name']    
+
+            print("\n")                
+
+
+
 
 
 
@@ -213,7 +252,7 @@ class CustomNotebook(ttk.Notebook):
 
 
 
-    #  This method will create a popup if some error occures
+    ##  This method will create a popup if some error occures
     def error_popup_msg(self, error_name, error_msg):
         title = "Error: " + str(error_name)
         tkMessageBox.showerror(title, error_msg) 

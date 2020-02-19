@@ -3,6 +3,8 @@
 import rospy
 from geometry_msgs.msg import Pose
 from custom_container_tab import RosContainerTab
+from sortable_object_batch_class import SortableBatch
+from sortable_object_class import SortableObject
 
 import Tkinter as tk
 import ttk
@@ -93,7 +95,7 @@ class CustomNotebook(ttk.Notebook):
 
 
 
-    ##  This method will construct all batches
+    ##  This method will construct all batches and populate them with sortable objects
     def construct_batch_objects(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         suffix = ".xml"
@@ -115,18 +117,47 @@ class CustomNotebook(ttk.Notebook):
 
         object_types = set([obj_type.text for obj_type in root.iter('type')])  # List of all object types in .xml
 
-
+        #  Create all batch object instances
         for obj_type in object_types:
-            print(obj_type)
+
+            #  Populate batch class 
+            batch = SortableBatch(i_object_type=obj_type)
 
             for item in objects:
                 if item.find('./type').text == obj_type:
-                    print item.attrib['name']    
+                    sortable_obj = self.build_sortable_object(item)
+                    batch.m_available_objects_dict.update({item.attrib['name'] : sortable_obj})
+            CustomNotebook.__sortable_batches.update({str(obj_type) : batch})
 
-            print("\n")                
+        # for b in self.__sortable_batches.values():
+        #     print b.m_available_objects_dict
+  
 
 
 
+    ##  This method will take an ET Element and will return a sortable object
+    def build_sortable_object(self, et_element):
+        name = str(et_element.attrib['name'])
+
+        x = et_element.find('./position/x_pos').text
+        y = et_element.find('./position/y_pos').text
+        z = et_element.find('./position/z_pos').text
+
+        obj_position = Pose()
+        obj_position.position.x = float(x)
+        obj_position.position.y = float(y)
+        obj_position.position.z = float(z)
+
+        sortable = SortableObject(obj_name=name, obj_position=obj_position)
+
+        return sortable
+
+
+
+
+
+
+        
 
 
 
@@ -144,8 +175,12 @@ class CustomNotebook(ttk.Notebook):
             
             self.m_active_container_dict.update({container_name: container_position})
 
-            tab = RosContainerTab(parent=parent_note, i_container_name=container_name, i_container_position=container_position)
+            tab = RosContainerTab(parent=parent_note, i_container_name=container_name, 
+                                i_container_position=container_position, i_batches=CustomNotebook.__sortable_batches)
+
             tab.m_container_pose = container_position
+            tab.m_batches = self.__sortable_batches  # Add batches to containers
+
             ttk.Notebook.add(self, tab, text=container_name)  # Add the tab to the notebook
             
             self.m_all_open_tabs_dict.update({container_name:tab})  # Save reference to tab

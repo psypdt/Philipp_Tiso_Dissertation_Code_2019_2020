@@ -18,11 +18,15 @@ from Tkinter import *
 from ttk import *
 
 
+##  TODO: Need to refine how the container pose is added to sortable object since teh read_all_objects method will be replaced by the batch method in custom_notebook
 #  This class will be used to display the list of objects
 class RosContainerTab(ttk.Frame):
     
+    __container_batches = dict()  # Batches should be shared across all tab instances
+
+
     ##  TODO: Implement default behaviour when a containers location is None, where should the arm go?
-    def __init__(self, parent=None, i_container_name=None, i_container_position=None):
+    def __init__(self, parent=None, i_container_name=None, i_container_position=None, i_batches=None):
         ttk.Frame.__init__(self, parent)
 
         self.m_container_name = i_container_name
@@ -31,6 +35,8 @@ class RosContainerTab(ttk.Frame):
         self.m_all_objects = self.read_all_objects()  # Dictionary containing all objects from xml file (name : SortableObject)
         self.m_checkbox_state_list = []  # List containing all checkbox states
         self.m_checkbox_name_state_dict = dict()  # Dictionary for all checkboxes
+
+        RosContainerTab.__container_batches = i_batches
 
         self.setup_widgets()  # Set up all graphical elements
 
@@ -60,7 +66,7 @@ class RosContainerTab(ttk.Frame):
         final_dict = dict()
 
         for item in items:
-            name = item.attrib  # This is a dictionary of {key: obj_name}
+            name = str(item.attrib['name'])  # This is a dictionary of {key: obj_name}
 
             x = item.find('./position/x_pos').text
             y = item.find('./position/y_pos').text
@@ -76,8 +82,8 @@ class RosContainerTab(ttk.Frame):
                 self.error_popup_msg("Container doesn't exist", error)
                 print("Container has None pose")
 
-            obj = SortableObject(obj_name=str(name['name']), obj_start=obj_position, obj_end=self.m_container_pose)
-            final_dict[str(name['name'])] = obj
+            obj = SortableObject(obj_name=str(name), obj_position=obj_position, container_position=self.m_container_pose)
+            final_dict[str(name)] = obj
 
         return final_dict
 
@@ -102,11 +108,11 @@ class RosContainerTab(ttk.Frame):
 
     #  This method will setup the scrollview for the sortable objects list
     def setup_scrollable_frame(self):
-        if type(self.m_all_objects) == NoneType:
+        if type(self.m_all_objects) == NoneType:  # TODO: Update this to use all batch objects
                 return None
 
         #  Create a subframe where we can create a new canvas
-        label = Label(self, text="Sortable Objects:", font=("Helvetica", 12)).grid(row=1, column=8)
+        label = Label(self, text="Sortable Object Batches:", font=("Helvetica", 12)).grid(row=1, column=8)
         self.frame_canvas = tk.Frame(self)
         self.frame_canvas.grid(row=2, column=8, pady=(5,0), sticky='ne')
         self.frame_canvas.grid_rowconfigure(0, weight=1)
@@ -142,8 +148,8 @@ class RosContainerTab(ttk.Frame):
 
 
         #  Resize the canvas frame to show exactly 1-by-5 CheckButtons and the scrollbar
-        first5columns_width = max([self.selections[j].winfo_width() for j in range(0, rows_to_show)])  # Find the widest element and set the size to that
-        first5rows_height = sum([self.selections[i].winfo_height() for i in range(0, rows_to_show)])
+        first5columns_width = max([self.selections[j].winfo_width() for j in range(0, rows_to_show)])  # Find the widest element and set the minimum size to that
+        first5rows_height = sum([self.selections[i].winfo_height() for i in range(0, rows_to_show)])  #  Sum the height of all elements and set the size to that + the scrollbar
         
         self.frame_canvas.config(width=first5columns_width + self.vscrollbar.winfo_width(), height=first5rows_height)
         self.canvas.config(scrollregion=self.canvas.bbox("all"))  # Set the scroll region
@@ -158,16 +164,17 @@ class RosContainerTab(ttk.Frame):
             return
 
         x = 0
-        for _, name in enumerate(self.m_all_objects.keys(), 1):
-            obj_val = tk.IntVar()
-            obj_name = str(name)
+        # for _, name in enumerate(self.m_all_objects.keys(), 1):
+        for _, name in enumerate(RosContainerTab.__container_batches.keys(), 1):
+            batch_val = tk.IntVar()
+            batch_name = str(name)
             
-            self.selections[x] = tk.Checkbutton(self.frame_selection, text=str(name), variable=obj_val, onvalue=1, offvalue=0)
+            self.selections[x] = tk.Checkbutton(self.frame_selection, text=str(name), variable=batch_val, onvalue=1, offvalue=0)
             self.selections[x].bind("<Button-1>", self.update_selected_objects)  # This waits for the item to be clicked, then it invokes update_selected_objects 
-            self.selections[x].grid(row=x, column=0, sticky="w")
+            self.selections[x].grid(row=x, column=0, sticky="w")  # Align the button on the left 
         
-            self.m_checkbox_state_list.append(obj_val)  # Save reference of obj to look up state
-            self.m_checkbox_name_state_dict.update({obj_name : obj_val})  # Add the object name : value pair into the dictionary
+            self.m_checkbox_state_list.append(batch_val)  # Save reference of obj to look up state
+            self.m_checkbox_name_state_dict.update({batch_name : batch_val})  # Add the object name : value pair into the dictionary
 
             x += 1
         
@@ -175,20 +182,51 @@ class RosContainerTab(ttk.Frame):
 
     #  This method will take care of what objects are added and removed from the selected_objects dictionary
     def update_selected_objects(self, event):
-        name = str(event.widget.cget("text"))  # Get text field from widget
-        state = self.m_checkbox_name_state_dict[name].get()
-
+        batch_name = str(event.widget.cget("text"))  # Get text field from widget
+        state = self.m_checkbox_name_state_dict[batch_name].get()
+        
+        batch = RosContainerTab.__container_batches.get(batch_name)
+        
         if state == 0:  # if the check box wasn't selected before (implying that it is now)
-            obj = self.m_all_objects.get(name)
-            self.add_object(name, obj)
-        else:
-            self.remove_object(name)
+            objs = batch.allocate_sortable_objects(1, self.m_container_pose, self.m_container_name)  # Get dictionary of objects we want to add
+
+            if objs != None:
+                self.add_batch_objects(objs)
+
+            # obj = self.m_all_objects.get(name)
+            # self.add_object(name, obj)
+        else:  # Remove objects from batches allocation dict
+            self.remove_batch_objects(batch)
+            # batch.release_sortable_object()
+            # self.remove_object(name)
 
 
 
-    #  This method can be used to add an object to the m_selected_objects_dict dictionary
+
+    ##  This method adds multiple objects to the current container
+    def add_batch_objects(self, obj_dict):
+        for key, val in obj_dict.iteritems():
+            self.add_object(key, val)
+            print "Added: %s %s" % (key, val)
+
+
+    ## This method can be used to add an object to the m_selected_objects_dict dictionary
     def add_object(self, name, value):
         self.m_selected_objects_dict[str(name)] = value
+
+
+
+    def remove_batch_objects(self, batch):
+        rm_key_list = []
+        for key, val in self.m_selected_objects_dict.iteritems():
+            if val.m_assigned_container == self.m_container_name:  # TODO: Awful way of doing this, need to find a better way to check if obj belongs to tab
+                print "Removed: %s %s" % (key, val)
+                batch.release_sortable_object(key)
+                rm_key_list.append(key)
+        
+        # Need to remove items from tab dict (cant do it above since dict changes size)
+        for key in rm_key_list:
+            self.remove_object(key)
 
 
     #  This method will remove an object with object name 'key' from the dictionary

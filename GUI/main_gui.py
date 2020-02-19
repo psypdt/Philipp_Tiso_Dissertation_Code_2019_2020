@@ -18,7 +18,7 @@ from custom_container_tab import RosContainerTab
 
 #  Helper class imports
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
-from sorting_object_class import SortableObject
+from sortable_object_class import SortableObject
 import xml.etree.ElementTree as ET
 
 from Tkinter import *
@@ -98,8 +98,7 @@ class Application(Frame):
 
 
 
-    
-        
+          
 
 root = Tk()  # The window which will contain all components
 root.geometry('750x500')  # Default size of window 

@@ -12,13 +12,14 @@ import json
 import Tkinter as tk
 import ttk
 import tkMessageBox
+import tkSimpleDialog
 
 
 from Tkinter import *
 from ttk import *
 
 
-##  TODO: Need to refine how the container pose is added to sortable object since teh read_all_objects method will be replaced by the batch method in custom_notebook
+
 #  This class will be used to display the list of objects
 class RosContainerTab(ttk.Frame):
     
@@ -31,12 +32,12 @@ class RosContainerTab(ttk.Frame):
 
         self.m_container_name = i_container_name
         self.m_container_pose = i_container_position  # The position where the container is located, None by default
+        RosContainerTab.__container_batches = i_batches
+
         self.m_selected_objects_dict = {}  # Dictionary containing all selected objects
-        self.m_all_objects = self.read_all_objects()  # Dictionary containing all objects from xml file (name : SortableObject)
+        self.m_all_objects = dict()  # Dictionary containing all objects from xml file (name : SortableObject)
         self.m_checkbox_state_list = []  # List containing all checkbox states
         self.m_checkbox_name_state_dict = dict()  # Dictionary for all checkboxes
-
-        RosContainerTab.__container_batches = i_batches
 
         self.setup_widgets()  # Set up all graphical elements
 
@@ -133,7 +134,7 @@ class RosContainerTab(ttk.Frame):
         self.canvas.create_window((0,0), window=self.frame_selection, anchor='ne')
 
         #  Add 9-by-1 CheckButtons to the frame
-        rows = len(self.m_all_objects)  # Get all objects that were contained in the xml
+        rows = len(RosContainerTab.__container_batches)  # Get all batches that were parsed out in the xml
         rows_to_show = 9
         
         #  If there are less than 9 items, display all of them at once
@@ -160,7 +161,7 @@ class RosContainerTab(ttk.Frame):
 
     #  This method will create all checkboxes within the current container tab
     def create_selection(self): 
-        if self.m_all_objects == None:
+        if RosContainerTab.__container_batches == None:
             return
 
         x = 0
@@ -187,18 +188,28 @@ class RosContainerTab(ttk.Frame):
         
         batch = RosContainerTab.__container_batches.get(batch_name)
         
+        widget = event.widget
+        var_name = str(widget.cget("variable"))
+
         if state == 0:  # if the check box wasn't selected before (implying that it is now)
-            objs = batch.allocate_sortable_objects(1, self.m_container_pose, self.m_container_name)  # Get dictionary of objects we want to add
+            num_items = self.prompt_batch_size()
+            
+            if num_items == None:
+                rev_val = self.m_checkbox_name_state_dict[batch_name].set(1)  # Unselect the box
+                return
 
-            if objs != None:
-                self.add_batch_objects(objs)
+            objs = batch.allocate_sortable_objects(num_items, self.m_container_pose, self.m_container_name)  # Get dictionary of objects we want to add
+            print objs
+            if objs == None:
+                error_name = "Exceeded Max object count!"
+                error_msg = "Unable to select %s objects when only %s are available!" % (num_items, batch.get_available_slots())
+                self.error_popup_msg(error_name, error_msg)
+                return
+            
+            self.add_batch_objects(objs)
 
-            # obj = self.m_all_objects.get(name)
-            # self.add_object(name, obj)
         else:  # Remove objects from batches allocation dict
             self.remove_batch_objects(batch)
-            # batch.release_sortable_object()
-            # self.remove_object(name)
 
 
 
@@ -207,7 +218,6 @@ class RosContainerTab(ttk.Frame):
     def add_batch_objects(self, obj_dict):
         for key, val in obj_dict.iteritems():
             self.add_object(key, val)
-            print "Added: %s %s" % (key, val)
 
 
     ## This method can be used to add an object to the m_selected_objects_dict dictionary
@@ -216,11 +226,11 @@ class RosContainerTab(ttk.Frame):
 
 
 
+    ##  Remove objects from batch, only if they belong to this container 
     def remove_batch_objects(self, batch):
         rm_key_list = []
         for key, val in self.m_selected_objects_dict.iteritems():
             if val.m_assigned_container == self.m_container_name:  # TODO: Awful way of doing this, need to find a better way to check if obj belongs to tab
-                print "Removed: %s %s" % (key, val)
                 batch.release_sortable_object(key)
                 rm_key_list.append(key)
         
@@ -240,4 +250,18 @@ class RosContainerTab(ttk.Frame):
     def error_popup_msg(self, error_name, error_msg):
         title = "Error: " + str(error_name)
         tkMessageBox.showerror(title, error_msg)        
+
+
+    ##  Prompt the user to specify how many objects should be selected
+    def prompt_batch_size(self):
+        items = tkSimpleDialog.askinteger("Number of Items", "How many items should be selected?", parent = self)
+
+        if items < 0:
+            return None
+
+        return items
+
+
+
+    
 

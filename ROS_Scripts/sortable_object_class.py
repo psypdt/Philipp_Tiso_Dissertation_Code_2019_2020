@@ -39,16 +39,15 @@ class SortableObject(object):
 
 
     
-    def __init__(self, obj_name="sortable", obj_position=None, container_position=None, container_name=None):
+    def __init__(self, obj_name="sortable", obj_position=None, container_position=None, container_name=None, batch_type=None):
         self.m_name = obj_name + str(SortableObject.static_object_counter)
+        self.m_batch_type = batch_type
         self.m_assigned_container = container_name
 
         self.m_start_pose = obj_position  # Where object is initially located in the work space
         self.m_container_pose = container_position  # The location of the container where the object should be placed
 
         SortableObject.static_object_counter += 1  # Increment number of objects
-
-        # print("Number of objects is: {}".format(SortableObject.static_object_counter))
 
         if self.m_start_pose == None:
             self.m_start_pose = Pose()

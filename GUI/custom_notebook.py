@@ -125,7 +125,7 @@ class CustomNotebook(ttk.Notebook):
 
             for item in objects:
                 if item.find('./type').text == obj_type:
-                    sortable_obj = self.build_sortable_object(item)
+                    sortable_obj = self.build_sortable_object(item, obj_type)
                     batch.m_available_objects_dict.update({item.attrib['name'] : sortable_obj})
             CustomNotebook.__sortable_batches.update({str(obj_type) : batch})
 
@@ -136,7 +136,7 @@ class CustomNotebook(ttk.Notebook):
 
 
     ##  This method will take an ET Element and will return a sortable object
-    def build_sortable_object(self, et_element):
+    def build_sortable_object(self, et_element, obj_batch_type):
         name = str(et_element.attrib['name'])
 
         x = et_element.find('./position/x_pos').text
@@ -148,16 +148,9 @@ class CustomNotebook(ttk.Notebook):
         obj_position.position.y = float(y)
         obj_position.position.z = float(z)
 
-        sortable = SortableObject(obj_name=name, obj_position=obj_position)
+        sortable = SortableObject(obj_name=name, obj_position=obj_position, batch_type=obj_batch_type)
 
         return sortable
-
-
-
-
-
-
-        
 
 
 
@@ -221,7 +214,9 @@ class CustomNotebook(ttk.Notebook):
         if "close" in element and index == self.__active:
             rm_tab = self.tab(index)['text']  # Get the key of the tab we are closing
             
-            self.m_all_open_tabs_dict.pop(rm_tab)
+            container = self.m_all_open_tabs_dict.get(rm_tab)
+            container.clean_destroy()  # Let the container empty all selected objects
+            
             container_position = self.m_active_container_dict.pop(rm_tab)
 
             self.m_unused_containers_dict.update({rm_tab: container_position})

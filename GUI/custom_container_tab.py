@@ -101,10 +101,26 @@ class RosContainerTab(ttk.Frame):
 
     #  This method will display some information about the container
     def setup_container_info(self):
-        text = "Container Position: \n" + str(self.m_container_pose.position)
-        self.pos_label = ttk.Label(self, text=text).grid(row=1, column=1)
+        self.selection_label_var = StringVar()  # Use this so it can be modified later
+        self.selection_label_var.set(self.get_selected_object_str())  # Set to all selected items
+
+        self.selected_objects_title_label = tk.Label(self, text="Objects Selected:", font=("Helvetica", 12)).grid(row=1, column=3)
+        self.selected_objects_label = tk.Label(self, textvariable=self.selection_label_var).grid(row=2, column=2, rowspan=3, columnspan=2, sticky="w")
 
 
+    ## Refactor this, pretty compact for a function atm
+    def update_selected_objects_label(self):
+        self.selection_label_var.set(self.get_selected_object_str())
+
+
+    ##  Return string of all selected objects
+    def get_selected_object_str(self):
+        final_str = ""
+        if len(self.m_selected_objects_dict) > 0:
+            for key, _ in self.m_selected_objects_dict.iteritems():
+                final_str += str(key) + "\n\n"
+        
+        return final_str
 
 
     #  This method will setup the scrollview for the sortable objects list
@@ -162,10 +178,12 @@ class RosContainerTab(ttk.Frame):
     #  This method will create all checkboxes within the current container tab
     def create_selection(self): 
         if RosContainerTab.__container_batches == None:
+            error_name = "No Batches Found"
+            error_msg = "No Batches exist. Unable to sort non-existant object batches."
+            self.error_popup_msg()
             return
 
         x = 0
-        # for _, name in enumerate(self.m_all_objects.keys(), 1):
         for _, name in enumerate(RosContainerTab.__container_batches.keys(), 1):
             batch_val = tk.IntVar()
             batch_name = str(name)
@@ -202,7 +220,7 @@ class RosContainerTab(ttk.Frame):
             
             if objs == None:
                 error_name = "Exceeded Max object count!"
-                error_msg = "Unable to select %s objects when only %s are available!" % (num_items, batch.get_available_slots())
+                error_msg = "Unable to select %s objects, only %s object(s) available!" % (num_items, batch.get_available_slots())
                 self.error_popup_msg(error_name, error_msg)
                 self.m_checkbox_name_state_dict[batch_name].set(1)
                 return
@@ -211,6 +229,8 @@ class RosContainerTab(ttk.Frame):
 
         else:  # Remove objects from batches allocation dict
             self.remove_batch_objects(batch)
+        
+        self.update_selected_objects_label()
 
 
 
@@ -230,14 +250,17 @@ class RosContainerTab(ttk.Frame):
     ##  Remove objects from batch, only if they belong to this container 
     def remove_batch_objects(self, batch):
         rm_key_list = []
+
         for key, val in self.m_selected_objects_dict.iteritems():
-            if val.m_assigned_container == self.m_container_name:  # TODO: Awful way of doing this, need to find a better way to check if obj belongs to tab
-                batch.release_sortable_object(key)
+            
+            # If container has access to the item & is part of the batch we're removing
+            if val.m_assigned_container == self.m_container_name and val.m_batch_type == batch.m_type:
                 rm_key_list.append(key)
         
         # Need to remove items from tab dict (cant do it above since dict changes size)
-        for key in rm_key_list:
-            self.remove_object(key)
+        for keyi in rm_key_list:
+            self.remove_object(keyi)
+            batch.release_sortable_object(keyi)
 
 
     #  This method will remove an object with object name 'key' from the dictionary
@@ -259,8 +282,26 @@ class RosContainerTab(ttk.Frame):
 
         if items < 0:
             return None
-
         return items
+
+
+
+    ##  This method will remove everything from the tab regarding sortable objects
+    def clean_destroy(self):
+        rm_key_list = []
+
+        #  Move through all batches
+        for _, batch in RosContainerTab.__container_batches.iteritems():
+            
+            #  Move through all selected items in this container
+            for key, val in self.m_selected_objects_dict.iteritems():
+                if val.m_assigned_container == self.m_container_name:
+                    rm_key_list.append(key)
+            for rkey in rm_key_list:
+                self.remove_object(rkey)
+                batch.release_sortable_object(rkey)
+
+
 
 
 

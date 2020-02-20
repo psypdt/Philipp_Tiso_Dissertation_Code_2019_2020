@@ -56,6 +56,11 @@ class Application(Frame):
 
     ##  This method will send a SortableObjectMsg to the ik solver
     def send_object_pos(self):
+        if self.notebook.m_all_open_tabs_dict.values() <= 0:
+            error_name = "No Containers!"
+            error_msg = "There are no containers! Try adding some with the <Add Container> button"
+            self.error_popup_msg(error_name, error_msg)
+            return
 
         #  For every tab, get m_selected_objects_dict
         for tab in self.notebook.m_all_open_tabs_dict.values():
@@ -95,6 +100,13 @@ class Application(Frame):
             for i in range(10):
                 tab.rowconfigure(i, weight=1)
                 tab.columnconfigure(i, weight=1)
+
+
+
+    ##  This method will create a popup if some error occures
+    def error_popup_msg(self, error_name, error_msg):
+        title = "Error: " + str(error_name)
+        tkMessageBox.showerror(title, error_msg)
 
 
 

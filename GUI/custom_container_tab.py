@@ -195,15 +195,16 @@ class RosContainerTab(ttk.Frame):
             num_items = self.prompt_batch_size()
             
             if num_items == None:
-                rev_val = self.m_checkbox_name_state_dict[batch_name].set(1)  # Unselect the box
+                self.m_checkbox_name_state_dict[batch_name].set(1)  # Unselect the box
                 return
 
             objs = batch.allocate_sortable_objects(num_items, self.m_container_pose, self.m_container_name)  # Get dictionary of objects we want to add
-            print objs
+            
             if objs == None:
                 error_name = "Exceeded Max object count!"
                 error_msg = "Unable to select %s objects when only %s are available!" % (num_items, batch.get_available_slots())
                 self.error_popup_msg(error_name, error_msg)
+                self.m_checkbox_name_state_dict[batch_name].set(1)
                 return
             
             self.add_batch_objects(objs)

@@ -24,6 +24,9 @@ import rospy
 from rospy_tutorials.msg import Floats
 from rospy.numpy_msg import numpy_msg
 
+import Tkinter as tk
+import tkMessageBox
+
 import intera_interface
 from intera_interface import CHECK_VERSION
 
@@ -36,7 +39,6 @@ from geometry_msgs.msg import (
 from std_msgs.msg import ( 
     Header, 
     String,
-    Float64MultiArray,
 )
  
 from sensor_msgs.msg import JointState
@@ -48,12 +50,11 @@ from intera_core_msgs.srv import (
 )
 
 
+
+
 #  Create a more flexible IK client 
-#  TODO Look into using arm calibration, could it be useful here?
-#  TODO Need to find a way to do collision avoidance  
 #  NOTE This function will retun True if a path was found or False if it failed
 def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
-    # i_TargetPose=[0.4950628,-0.0002616,0.3974473], i_TargetOrientation=[0.704020578925,0.710172716916,0.00244101361829,0.00194372088834],
     """ 
     i_Limb
         default: "right"
@@ -168,7 +169,7 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
 
     rospy.loginfo("Advanced IKService Solver Running... ")
 
-    #  TODO Check what result_type contains
+
     #  Check if the result is valid, and what seed was used to obtain the solution
     if (response.result_type[0] > 0):
         seed_str = {
@@ -189,7 +190,7 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
         rospy.loginfo("Moving To Target Pose...")
         #  Move the limb into the final position
         sawyer_arm = intera_interface.Limb(i_Limb)
-        sawyer_arm.set_joint_position_speed(0.28)  #  Max ratio of joint speed is 0.2 (pretty slow)
+        sawyer_arm.set_joint_position_speed(0.28)  # Max ratio of joint speed is 0.2 (pretty slow)
         sawyer_arm.move_to_joint_positions(joint_solution)
         rospy.sleep(0.01)
     else:
@@ -205,19 +206,17 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
 #  This function gets called as soon as we get some data from the "move_to_dest/goal" topic
 #  Data contains both the start and the end possition respectively
 def sort_object_callback(data):
-    input_orientation = [0.704020578925,0.710172716916,0.00244101361829,0.00194372088834]
-
     tmp_arm = intera_interface.Limb('right')
 
     print("Received SortableObjectMsg: %s" % data)
     
     #  NOTE For the simulation, have timeout=5 and speed=0.2 otherwise it segfaults, or timeout=2, speed=0.28
-    tmp_arm.move_to_neutral(timeout=5, speed=0.28)  #  The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
+    tmp_arm.move_to_neutral(timeout=5, speed=0.28)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
     rospy.sleep(2)
 
     #  Move to the object which will be picked up
     if flex_ik_service_client(i_Pose=data.start_pose, i_UseAdvanced=True):
-        print("Moving to object: %s" % data.start_pose)
+        print("Moving to Object:\n %s" % data.start_pose)
         rospy.loginfo("Route to object was successfully executed")
         rospy.sleep(2)  # Sleep to simulate object being picked up
     else:
@@ -227,13 +226,21 @@ def sort_object_callback(data):
 
     #  Move the object to the location where the container is
     if flex_ik_service_client(i_Pose=data.end_pose, i_UseAdvanced=True):
-        print("Moving to container %s" % data.end_pose)
+        print("Moving to Container:\n %s" % data.end_pose)
         rospy.loginfo("Route to container was successfully executed")
         rospy.sleep(3)
     else:
         rospy.logwarn("Route Execution Failed: Invalid target container position")
 
 
+
+def unexpected_ik_crash_warning():
+    error_title = "Error: IK solver crashed!"
+    error_detail = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\nPlese restart the program."
+    root = tk.Tk()
+    root.withdraw()
+    tkMessageBox.showerror(error_title, error_detail)
+    root.destroy()
 
 
 
@@ -242,12 +249,17 @@ def main():
     pub = rospy.Publisher('ik_status', String, queue_size=10)  
 
     rospy.init_node("rsdk_flex_ik_service_client")
-    rate = rospy.Rate(10)  #  Publishing rate in Hz
+    rate = rospy.Rate(10)  # Publishing rate in Hz
 
-    # Starts-up/enables the robot 
-    rs = intera_interface.RobotEnable(CHECK_VERSION)
-    init_state = rs.state().enabled
-    rs.enable()
+    #  Starts-up/enables the robot 
+    try:
+        rs = intera_interface.RobotEnable(CHECK_VERSION)
+        init_state = rs.state().enabled
+        rs.enable()
+    except Exception as ex:
+        print(ex)
+        unexpected_ik_crash_warning()  # Display error if robot can't be enabled
+        rospy.signal_shutdown("Failed to enable Robot")
 
     #  Move to default position when the ik solver is initially launched
     arm = intera_interface.Limb('right')

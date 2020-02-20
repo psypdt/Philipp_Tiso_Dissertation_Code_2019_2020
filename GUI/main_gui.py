@@ -79,11 +79,11 @@ class Application(Frame):
         style = ttk.Style()  # Create style for buttons
         style.configure("WR.TButton", foreground="white", background="red", width=20, height=20)
 
-        self.run = ttk.Button(self, text="RUN", command= lambda: self.send_object_pos())
+        self.run = ttk.Button(self, text="RUN", style="WR.TButton", command= lambda: self.send_object_pos())
         self.run.pack(side='left', ipadx=10, padx=30)
 
-        self.QUIT = ttk.Button(self, text="Quit", style="WR.TButton", command=self.quit)
-        self.QUIT.pack(side='left', ipadx=10, padx=30)
+        # self.QUIT = ttk.Button(self, text="Quit", style="WR.TButton", command=self.quit)
+        # self.QUIT.pack(side='left', ipadx=10, padx=30)
         
         self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.notebook))
         self.add_container_button.pack(side='right', ipadx=10, padx=30)
@@ -110,12 +110,17 @@ class Application(Frame):
 
 
 
-          
+
 
 root = Tk()  # The window which will contain all components
 root.geometry('750x500')  # Default size of window 
 
 app = Application(master=root)
 
+
+def handle_close():
+    root.destroy()
+
+
+root.protocol('WM_DELETE_WINDOW', handle_close)
 app.mainloop()
-root.destroy()

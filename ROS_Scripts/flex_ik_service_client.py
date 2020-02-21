@@ -82,6 +82,7 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
         rospy.logerr("Error: flex_ik_service_client received 'None' in arg 'i_Pose' for target position")
         return False
 
+    return False
 
     #  Initialize IK service
     service_name = "ExternalTools/" + i_Limb + "/PositionKinematicsNode/IKService"
@@ -218,9 +219,10 @@ def sort_object_callback(data):
         rospy.loginfo("Route to object was successfully executed")
         rospy.sleep(2)  # Sleep to simulate object being picked up
     else:
+        object_name = data.object_name
         rospy.logwarn("Route Execution Failed: Invalid target object position")
         error_name = "Route Execution Failed (Invalid Position)"
-        error_msg = "Object \'{}\' can't be reached" % data.object_name
+        error_msg = "Object \'%s\' can't be reached" % str(object_name)
         ik_solver_error_msg(error_name, error_msg)
         tmp_arm.move_to_neutral(timeout=5, speed=0.28)
         return
@@ -233,9 +235,10 @@ def sort_object_callback(data):
         rospy.loginfo("Route to container was successfully executed")
         rospy.sleep(3)
     else:
+        container_name = data.container_name
         rospy.logwarn("Route Execution Failed: Invalid target container position")
         error_name = "Route Execution Failed (Invalid Position)"
-        error_msg = "Container \'{}\' can't be reached" % data.container_name
+        error_msg = "Container \'%s\' can't be reached" % str(container_name)
         ik_solver_error_msg(error_name, error_msg)
         tmp_arm.move_to_neutral(timeout=5, speed=0.28)
 

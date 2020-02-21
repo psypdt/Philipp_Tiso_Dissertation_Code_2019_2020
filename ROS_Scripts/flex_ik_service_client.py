@@ -207,8 +207,6 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
 #  Data contains both the start and the end possition respectively
 def sort_object_callback(data):
     tmp_arm = intera_interface.Limb('right')
-
-    print("Received SortableObjectMsg: %s" % data)
     
     #  NOTE For the simulation, have timeout=5 and speed=0.2 otherwise it segfaults, or timeout=2, speed=0.28
     tmp_arm.move_to_neutral(timeout=5, speed=0.28)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
@@ -221,6 +219,11 @@ def sort_object_callback(data):
         rospy.sleep(2)  # Sleep to simulate object being picked up
     else:
         rospy.logwarn("Route Execution Failed: Invalid target object position")
+        error_name = "Route Execution Failed (Invalid Position)"
+        error_msg = "Object \'{}\' can't be reached" % data.object_name
+        ik_solver_error_msg(error_name, error_msg)
+        tmp_arm.move_to_neutral(timeout=5, speed=0.28)
+        return
 
     tmp_arm.move_to_neutral(timeout=5, speed=0.28)
 
@@ -231,22 +234,25 @@ def sort_object_callback(data):
         rospy.sleep(3)
     else:
         rospy.logwarn("Route Execution Failed: Invalid target container position")
+        error_name = "Route Execution Failed (Invalid Position)"
+        error_msg = "Container \'{}\' can't be reached" % data.container_name
+        ik_solver_error_msg(error_name, error_msg)
+        tmp_arm.move_to_neutral(timeout=5, speed=0.28)
 
 
 
-def unexpected_ik_crash_warning():
-    error_title = "Error: IK solver crashed!"
-    error_detail = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\nPlese restart the program."
+def ik_solver_error_msg(errorTitle, errorMsg):
+    error_title = "Error: " + errorTitle
     root = tk.Tk()
     root.withdraw()
-    tkMessageBox.showerror(error_title, error_detail)
+    tkMessageBox.showerror(error_title, errorMsg)
     root.destroy()
 
 
 
 def main():
     #  Create a publisher that will publish strings to the ik_status topic
-    pub = rospy.Publisher('ik_status', String, queue_size=10)  
+    pub = rospy.Publisher('data/sorting/sorted_objects', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
 
     rospy.init_node("rsdk_flex_ik_service_client")
     rate = rospy.Rate(10)  # Publishing rate in Hz
@@ -258,15 +264,18 @@ def main():
         rs.enable()
     except Exception as ex:
         print(ex)
-        unexpected_ik_crash_warning()  # Display error if robot can't be enabled
+        error_name = "IK solver crashed!
+        error_msg = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\nPlese restart the program."
+        ik_solver_error_msg(error_name, error_msg)  # Display error if robot can't be enabled
         rospy.signal_shutdown("Failed to enable Robot")
+
+    sub = rospy.Subscriber('move_to_dest/goal', SortableObjectMsg, callback=sort_object_callback, queue_size=10)
 
     #  Move to default position when the ik solver is initially launched
     arm = intera_interface.Limb('right')
     arm.move_to_neutral(timeout=5, speed=0.28) 
 
     #  Create a subscriber so that we can send info to the robot
-    sub = rospy.Subscriber('move_to_dest/goal', SortableObjectMsg, callback=sort_object_callback)
     rospy.spin()
 
 

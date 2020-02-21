@@ -44,53 +44,6 @@ class RosContainerTab(ttk.Frame):
 
 
 
-    #  This method will read all objects from an xml and will return a dictionary containing said objects (including name and postition)
-    def read_all_objects(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        suffix = ".xml"
-        filename = "object_positions"
-        
-        full_path = os.path.join(dir_path, filename + suffix)
-
-        try:
-            with open(full_path, 'rb') as xml_file:
-                tree = ET.parse(xml_file)
-        except Exception as e:
-            print(e)
-            error = "Unable to find objects in file: " + str(filename + str(suffix)) + "\n\nAt location: " + str(full_path)
-            self.error_popup_msg("Can't find object file", error)
-            return None
-
-        root = tree.getroot()
-        items = root.getchildren()
-
-        final_dict = dict()
-
-        for item in items:
-            name = str(item.attrib['name'])  # This is a dictionary of {key: obj_name}
-
-            x = item.find('./position/x_pos').text
-            y = item.find('./position/y_pos').text
-            z = item.find('./position/z_pos').text
-
-            obj_position = Pose()
-            obj_position.position.x = float(x)
-            obj_position.position.y = float(y)
-            obj_position.position.z = float(z)
-
-            if self.m_container_pose == None:
-                error = "The container: " + str(self.m_container_name) + " doesn't have a physical position! Check the container xml file."
-                self.error_popup_msg("Container doesn't exist", error)
-                print("Container has None pose")
-
-            obj = SortableObject(obj_name=str(name), obj_position=obj_position, container_position=self.m_container_pose)
-            final_dict[str(name)] = obj
-
-        return final_dict
-
-
-
-
     #  This method will call all other methods which are responsible for setting up the tabs gui
     def setup_widgets(self):
         self.setup_scrollable_frame()

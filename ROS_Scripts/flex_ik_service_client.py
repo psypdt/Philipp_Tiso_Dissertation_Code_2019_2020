@@ -264,7 +264,7 @@ def main():
         rs.enable()
     except Exception as ex:
         print(ex)
-        error_name = "IK solver crashed!
+        error_name = "IK solver crashed!"
         error_msg = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\nPlese restart the program."
         ik_solver_error_msg(error_name, error_msg)  # Display error if robot can't be enabled
         rospy.signal_shutdown("Failed to enable Robot")

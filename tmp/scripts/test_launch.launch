@@ -3,7 +3,7 @@
     <!-- <node name="simple_gripp_sub" pkg="intera_examples" type="simple_gripper_action.py" output="screen"/> -->
     <!-- <node name="internal_cam_publisher" pkg="intera_examples" type="camera_publisher.py" output="screen"/> -->
     <!-- <node name="internal_cam_subscriber" pkg="intera_examples" type="simple_camera_subscriber.py" output="screen"/> -->
-    <node name="main_gui_node" pkg="intera_examples" type="tkInter_test.py" output="screen"/>
+    <node name="main_gui_node" pkg="intera_examples" type="main_gui.py" output="screen"/>
     <node name="rsdk_flex_ik_service_client" pkg="intera_examples" type="flex_ik_service_client.py" output="screen"/>
 
 

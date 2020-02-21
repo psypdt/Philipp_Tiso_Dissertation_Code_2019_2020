@@ -1,0 +1,4 @@
+<launch>
+    <node name="main_gui_node" pkg="psypdt_dissertation" type="main_gui.py" output="screen"/>
+    <node name="rsdk_flex_ik_service_client" pkg="psypdt_dissertation" type="flex_ik_service_client.py" output="screen"/>
+</launch>

@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+
+<root>
+	<object name="Rubber Duck">
+        <type>Animal</type>
+
+        <position>
+            <x_pos>0.774271346839804</x_pos>
+            <y_pos>0.4149851350604493</y_pos>
+            <z_pos>0.09272016422888248</z_pos>
+        </position>
+
+	<orientation>
+			<x_orient>0.7036701937019578</x_orient>
+			<y_orient>0.70910765949065</y_orient>
+			<z_orient>-0.028881811666858485</z_orient>
+			<w_orient>-0.03435733840072594</w_orient>
+		</orientation>
+	</object>
+	
+	<object name="Orange Block">
+		<type>Block</type>
+
+		<position>
+			<x_pos>0.7519686121884195</x_pos>
+	        <y_pos>-0.3017746579997936</y_pos>
+            <z_pos>0.082403012433622</z_pos>
+		</position>
+
+		<orientation>
+			<x_orient>0.7075097486449031</x_orient>
+			<y_orient>0.7066922454878554</y_orient>
+			<z_orient>-0.0030913164974091362</z_orient>
+			<w_orient>-0.0025435215886281475</w_orient>
+		</orientation>
+</object>
+
+
+</root>

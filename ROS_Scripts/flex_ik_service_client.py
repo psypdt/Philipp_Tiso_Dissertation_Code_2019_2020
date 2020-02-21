@@ -215,8 +215,8 @@ def sort_object_callback(data):
     rospy.sleep(2)
 
     #  Move to the object which will be picked up
-    if flex_ik_service_client(i_Pose=data.start_pose, i_UseAdvanced=True):
-        print("Moving to Object:\n %s" % data.start_pose)
+    if flex_ik_service_client(i_Pose=data.msg_object_pose, i_UseAdvanced=True):
+        print("Moving to Object:\n %s" % data.msg_object_pose)
         rospy.loginfo("Route to object was successfully executed")
         rospy.sleep(2)  # Sleep to simulate object being picked up
     else:
@@ -225,8 +225,8 @@ def sort_object_callback(data):
     tmp_arm.move_to_neutral(timeout=5, speed=0.28)
 
     #  Move the object to the location where the container is
-    if flex_ik_service_client(i_Pose=data.end_pose, i_UseAdvanced=True):
-        print("Moving to Container:\n %s" % data.end_pose)
+    if flex_ik_service_client(i_Pose=data.msg_container_pose, i_UseAdvanced=True):
+        print("Moving to Container:\n %s" % data.msg_container_pose)
         rospy.loginfo("Route to container was successfully executed")
         rospy.sleep(3)
     else:

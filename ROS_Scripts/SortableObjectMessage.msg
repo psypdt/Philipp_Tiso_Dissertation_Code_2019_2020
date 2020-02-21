@@ -1,3 +1,4 @@
-string name
-geometry_msgs/Pose start_pose
-geometry_msgs/Pose end_pose
+string object_name
+string container_name
+geometry_msgs/Pose msg_object_pose
+geometry_msgs/Pose msg_container_pose

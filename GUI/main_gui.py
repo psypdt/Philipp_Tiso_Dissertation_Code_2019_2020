@@ -71,8 +71,7 @@ class Application(Frame):
                 
         self.top_lvl_window = tk.Toplevel(self.master)
         self.top_lvl_window.title("Live View")
-        self.top_lvl_window.minsize(150,100)
-        self.top_lvl_window.maxsize(450, 400)
+        self.top_lvl_window.minsize(550,400)
         self.live_sort_window = LiveViewFrame(self.top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
 
 

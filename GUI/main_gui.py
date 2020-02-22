@@ -5,7 +5,7 @@ from __future__ import print_function
 #  ROS imports
 import rospy
 from geometry_msgs.msg import Pose
-from std_msgs.msg import String
+from std_msgs.msg import (String, Bool)
 
 import os
 import json
@@ -19,13 +19,11 @@ from custom_container_tab import RosContainerTab
 #  Helper class imports
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
 from sortable_object_class import SortableObject
+from object_position_updating_service import LiveViewFrame
 import xml.etree.ElementTree as ET
 
 from Tkinter import *
 from ttk import *
-
-
-##  TODO : Find a way to send a shutdown signal to IK solver when window is closed
 
 
 
@@ -36,6 +34,8 @@ class Application(Frame):
         #  ros initialization
         rospy.init_node("main_gui_node")
         self.publisher = rospy.Publisher('move_to_dest/goal', SortableObjectMsg, queue_size=10)
+        self.shutdown_ik_pub = rospy.Publisher('rsdk_flex_ik_service_client/shudown', Bool, queue_size=10)
+        rospy.Rate(10)
 
         #  Graphics initialization
         Frame.__init__(self, master)
@@ -68,7 +68,12 @@ class Application(Frame):
             for item in tab.m_selected_objects_dict.values():  # Get all selected SortableObjects
                 msg = item.to_sortableObjectMessage()
                 self.publisher.publish(msg)
-                print(item)
+                
+        self.top_lvl_window = tk.Toplevel(self.master)
+        self.top_lvl_window.title("Live View")
+        self.top_lvl_window.minsize(150,100)
+        self.top_lvl_window.maxsize(450, 400)
+        self.live_sort_window = LiveViewFrame(self.top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
 
 
 
@@ -81,9 +86,6 @@ class Application(Frame):
 
         self.run = ttk.Button(self, text="RUN", style="WR.TButton", command= lambda: self.send_object_pos())
         self.run.pack(side='left', ipadx=10, padx=30)
-
-        # self.QUIT = ttk.Button(self, text="Quit", style="WR.TButton", command=self.quit)
-        # self.QUIT.pack(side='left', ipadx=10, padx=30)
         
         self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.notebook))
         self.add_container_button.pack(side='right', ipadx=10, padx=30)
@@ -103,10 +105,27 @@ class Application(Frame):
 
 
 
+    ##  This method returns a list of all selected object names
+    def get_selected_objects(self):
+        selected_obj_list = []
+        
+        for container in self.notebook.m_all_open_tabs_dict.values():
+            for item in container.m_selected_objects_dict.keys():
+                selected_obj_list.append(item)
+        return selected_obj_list
+
+
     ##  This method will create a popup if some error occures
     def error_popup_msg(self, error_name, error_msg):
         title = "Error: " + str(error_name)
         tkMessageBox.showerror(title, error_msg)
+
+    
+    ##  This method will shutdown the current and the ik_solver node
+    def shutdown_nodes(self):
+        signal = Bool(True)
+        self.shutdown_ik_pub.publish(signal)
+        rospy.signal_shutdown("User closed main ui window")
 
 
 
@@ -119,6 +138,7 @@ app = Application(master=root)
 
 
 def handle_close():
+    app.shutdown_nodes()
     root.destroy()
 
 

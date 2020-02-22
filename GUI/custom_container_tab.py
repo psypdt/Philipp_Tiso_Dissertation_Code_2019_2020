@@ -47,7 +47,7 @@ class RosContainerTab(ttk.Frame):
     #  This method will call all other methods which are responsible for setting up the tabs gui
     def setup_widgets(self):
         self.setup_scrollable_frame()
-        self.create_selection()
+        # self.create_selection()
         self.setup_container_info()
 
 
@@ -76,7 +76,7 @@ class RosContainerTab(ttk.Frame):
         return final_str
 
 
-    #  This method will setup the scrollview for the sortable objects list
+    ##  This method will setup the scrollview for the sortable objects list
     def setup_scrollable_frame(self):
         if type(self.m_all_objects) == NoneType:  # TODO: Update this to use all batch objects
                 return None
@@ -128,7 +128,7 @@ class RosContainerTab(ttk.Frame):
 
 
 
-    #  This method will create all checkboxes within the current container tab
+    ##  This method will create all checkboxes within the current container tab
     def create_selection(self): 
         if RosContainerTab.__container_batches == None:
             error_name = "No Batches Found"
@@ -152,7 +152,7 @@ class RosContainerTab(ttk.Frame):
         
 
 
-    #  This method will take care of what objects are added and removed from the selected_objects dictionary
+    ##  This method will take care of what objects are added and removed from the selected_objects dictionary
     def update_selected_objects(self, event):
         batch_name = str(event.widget.cget("text"))  # Get text field from widget
         state = self.m_checkbox_name_state_dict[batch_name].get()
@@ -239,7 +239,7 @@ class RosContainerTab(ttk.Frame):
 
 
 
-    ##  This method will remove everything from the tab regarding sortable objects
+    ##  This method will remove everything from the tab regarding sortable objects, called by notebook
     def clean_destroy(self):
         rm_key_list = []
 

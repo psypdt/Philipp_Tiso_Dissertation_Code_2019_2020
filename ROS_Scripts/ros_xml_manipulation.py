@@ -14,15 +14,32 @@ from xml.dom import minidom
 
 ##  Returns a more human readable version of the generated xml
 def prettify_xml(elem):
+    #  If the input is a string, then we can immediatly generate the xml
+    if isinstance(elem, basestring):
+        parsed = minidom.parseString(elem)
+        return parsed.toprettyxml()
+
     default_str = ModuleElementTree.tostring(elem, 'utf-8')
     reparsed = minidom.parseString(default_str)
-    return reparsed.toprettyxml(indent="  ")
+    return reparsed.toprettyxml()
+
+
+
+##  This method will trim the xml version element
+def trim_xml_version_element(elem):
+    unwanted_str = "<?xml version=\"1.0\" ?>"
+    trim_len = len(unwanted_str)
+
+    untrimmed_xml = prettify_xml(elem)
+    trimmed_xml = untrimmed_xml[trim_len:]
+
+    return trimmed_xml
 
 
 
 
 ##  Method generates xml for an object
-def generate_xml_for_data(name, obj_type, pose):
+def generate_xml_from_data(name, obj_type, pose):
 
     #  If the object type were None, then this would be a container
     has_type = True
@@ -40,14 +57,8 @@ def generate_xml_for_data(name, obj_type, pose):
 
     #  Generate xml from position data
     generate_xml_from_pos(pose, tag_object)
-    
-    unwanted_str = "<?xml version=\"1.0\" ?>"
-    trim_len = len(unwanted_str)
 
-    untrimmed_xml = prettify_xml(tag_object)
-    trimmed_xml = untrimmed_xml[trim_len:]
-
-    return trimmed_xml
+    return tag_object
 
 
 
@@ -94,7 +105,27 @@ def generate_xml_from_pos(pose, tag_main_element):
 
 ##  This method will write the generated xml snippets into an existing file containing containers or objects
 def append_to_xml_file(file=None, name=None, obj_type=None, pose=None):
-    return generate_xml_for_data(name, obj_type, pose)
+    with open(file, mode='r+') as xml_file:
+        #  Generate new tag
+        raw_insertion_elem = generate_xml_from_data(name, obj_type, pose)
+        
+        try:
+            #  Get root of the file, allows us to insert inbetween the root tag
+            root = ModuleElementTree.parse(file).getroot()  # Get all file contents
+            trimmed_insertion_elem = ModuleElementTree.fromstring(trim_xml_version_element(raw_insertion_elem))
+
+            root.append(trimmed_insertion_elem)  # Insert at the bottom of the file
+            final_str = ModuleElementTree.tostring(root)
+            xml_file.write(final_str)
+
+            
+
+        except ModuleElementTree.ParseError as error:  # File is empty
+            root = Element('root')
+            # first_insert = Element.fromstring(raw_insertion_elem)
+            root.append(raw_insertion_elem)
+            xml_file.write(prettify_xml(root))
+
 
 
 
@@ -109,8 +140,4 @@ container_position.orientation.y = 5
 container_position.orientation.z = 6
 container_position.orientation.w = 7
 
-
-print(append_to_xml_file(name="Red Ball", obj_type="Ball", pose=container_position))
-
-print(append_to_xml_file(name="Red Container", pose=container_position))
-
+append_to_xml_file(file='testxml.xml', name="Orange Ball", obj_type="Ball", pose=container_position)

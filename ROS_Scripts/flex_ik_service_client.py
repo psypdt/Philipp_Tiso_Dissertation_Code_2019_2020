@@ -39,6 +39,7 @@ from geometry_msgs.msg import (
 from std_msgs.msg import ( 
     Header, 
     String,
+    Bool
 )
  
 from sensor_msgs.msg import JointState
@@ -49,6 +50,8 @@ from intera_core_msgs.srv import (
     SolvePositionIKRequest,
 )
 
+
+sorted_pub = None  # Maybe make this a class so that we dont need globals
 
 
 
@@ -82,7 +85,6 @@ def flex_ik_service_client(i_Limb="right", i_Pose=None, i_UseAdvanced=False):
         rospy.logerr("Error: flex_ik_service_client received 'None' in arg 'i_Pose' for target position")
         return False
 
-    return False
 
     #  Initialize IK service
     service_name = "ExternalTools/" + i_Limb + "/PositionKinematicsNode/IKService"
@@ -233,6 +235,8 @@ def sort_object_callback(data):
     if flex_ik_service_client(i_Pose=data.msg_container_pose, i_UseAdvanced=True):
         print("Moving to Container:\n %s" % data.msg_container_pose)
         rospy.loginfo("Route to container was successfully executed")
+        global sorted_pub
+        sorted_pub.publish(data)
         rospy.sleep(3)
     else:
         container_name = data.container_name
@@ -252,12 +256,20 @@ def ik_solver_error_msg(errorTitle, errorMsg):
     root.destroy()
 
 
+def shutdown_callback(data):
+    if data == True:
+        rospy.signal_shutdown("Main GUI terminated")
+
+
+
+
 
 def main():
     #  Create a publisher that will publish strings to the ik_status topic
-    pub = rospy.Publisher('data/sorting/sorted_objects', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
+    global sorted_pub
+    sorted_pub = rospy.Publisher('data/sorting/sorted_objects', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
 
-    rospy.init_node("rsdk_flex_ik_service_client")
+    node = rospy.init_node("rsdk_flex_ik_service_client")
     rate = rospy.Rate(10)  # Publishing rate in Hz
 
     #  Starts-up/enables the robot 
@@ -272,13 +284,13 @@ def main():
         ik_solver_error_msg(error_name, error_msg)  # Display error if robot can't be enabled
         rospy.signal_shutdown("Failed to enable Robot")
 
-    sub = rospy.Subscriber('move_to_dest/goal', SortableObjectMsg, callback=sort_object_callback, queue_size=10)
+    ik_sub_sorting = rospy.Subscriber('move_to_dest/goal', SortableObjectMsg, callback=sort_object_callback, queue_size=10)  # Subscribe to topic where sortable messages arrive
+    ik_sub_shutdown = rospy.Subscriber('rsdk_flex_ik_service_client/shudown', Bool, callback=shutdown_callback, queue_size=10)  # Topic where main_gui tells solver to shutdown
 
     #  Move to default position when the ik solver is initially launched
     arm = intera_interface.Limb('right')
     arm.move_to_neutral(timeout=5, speed=0.28) 
-
-    #  Create a subscriber so that we can send info to the robot
+    
     rospy.spin()
 
 

@@ -20,7 +20,7 @@ from ttk import *
 
 
 
-#  This class will be used to display the list of objects
+##  This class will be used to display the list of objects
 class RosContainerTab(ttk.Frame):
     
     __container_batches = dict()  # Batches should be shared across all tab instances
@@ -47,7 +47,6 @@ class RosContainerTab(ttk.Frame):
     #  This method will call all other methods which are responsible for setting up the tabs gui
     def setup_widgets(self):
         self.setup_scrollable_frame()
-        # self.create_selection()
         self.setup_container_info()
 
 

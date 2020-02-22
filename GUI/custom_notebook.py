@@ -128,9 +128,6 @@ class CustomNotebook(ttk.Notebook):
                     sortable_obj = self.build_sortable_object(item, obj_type)
                     batch.m_available_objects_dict.update({item.attrib['name'] : sortable_obj})
             CustomNotebook.__sortable_batches.update({str(obj_type) : batch})
-
-        # for b in self.__sortable_batches.values():
-        #     print b.m_available_objects_dict
   
 
 

@@ -20,7 +20,7 @@ from ttk import *
 
 
 
-#  This class will be used to display the list of objects
+##  This class will be used to display the list of objects
 class RosContainerTab(ttk.Frame):
     
     __container_batches = dict()  # Batches should be shared across all tab instances
@@ -44,57 +44,9 @@ class RosContainerTab(ttk.Frame):
 
 
 
-    #  This method will read all objects from an xml and will return a dictionary containing said objects (including name and postition)
-    def read_all_objects(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        suffix = ".xml"
-        filename = "object_positions"
-        
-        full_path = os.path.join(dir_path, filename + suffix)
-
-        try:
-            with open(full_path, 'rb') as xml_file:
-                tree = ET.parse(xml_file)
-        except Exception as e:
-            print(e)
-            error = "Unable to find objects in file: " + str(filename + str(suffix)) + "\n\nAt location: " + str(full_path)
-            self.error_popup_msg("Can't find object file", error)
-            return None
-
-        root = tree.getroot()
-        items = root.getchildren()
-
-        final_dict = dict()
-
-        for item in items:
-            name = str(item.attrib['name'])  # This is a dictionary of {key: obj_name}
-
-            x = item.find('./position/x_pos').text
-            y = item.find('./position/y_pos').text
-            z = item.find('./position/z_pos').text
-
-            obj_position = Pose()
-            obj_position.position.x = float(x)
-            obj_position.position.y = float(y)
-            obj_position.position.z = float(z)
-
-            if self.m_container_pose == None:
-                error = "The container: " + str(self.m_container_name) + " doesn't have a physical position! Check the container xml file."
-                self.error_popup_msg("Container doesn't exist", error)
-                print("Container has None pose")
-
-            obj = SortableObject(obj_name=str(name), obj_position=obj_position, container_position=self.m_container_pose)
-            final_dict[str(name)] = obj
-
-        return final_dict
-
-
-
-
-    #  This method will call all other methods which are responsible for setting up the tabs gui
+    ##  This method will call all other methods which are responsible for setting up the tabs gui
     def setup_widgets(self):
         self.setup_scrollable_frame()
-        self.create_selection()
         self.setup_container_info()
 
 
@@ -108,7 +60,7 @@ class RosContainerTab(ttk.Frame):
         self.selected_objects_label = tk.Label(self, textvariable=self.selection_label_var).grid(row=2, column=2, rowspan=3, columnspan=2, sticky="w")
 
 
-    ## Refactor this, pretty compact for a function atm
+    ##  Refactor this, pretty compact for a function atm
     def update_selected_objects_label(self):
         self.selection_label_var.set(self.get_selected_object_str())
 
@@ -123,7 +75,7 @@ class RosContainerTab(ttk.Frame):
         return final_str
 
 
-    #  This method will setup the scrollview for the sortable objects list
+    ##  This method will setup the scrollview for the sortable objects list
     def setup_scrollable_frame(self):
         if type(self.m_all_objects) == NoneType:  # TODO: Update this to use all batch objects
                 return None
@@ -175,7 +127,7 @@ class RosContainerTab(ttk.Frame):
 
 
 
-    #  This method will create all checkboxes within the current container tab
+    ##  This method will create all checkboxes within the current container tab
     def create_selection(self): 
         if RosContainerTab.__container_batches == None:
             error_name = "No Batches Found"
@@ -199,7 +151,7 @@ class RosContainerTab(ttk.Frame):
         
 
 
-    #  This method will take care of what objects are added and removed from the selected_objects dictionary
+    ##  This method will take care of what objects are added and removed from the selected_objects dictionary
     def update_selected_objects(self, event):
         batch_name = str(event.widget.cget("text"))  # Get text field from widget
         state = self.m_checkbox_name_state_dict[batch_name].get()
@@ -241,7 +193,7 @@ class RosContainerTab(ttk.Frame):
             self.add_object(key, val)
 
 
-    ## This method can be used to add an object to the m_selected_objects_dict dictionary
+    ##  This method can be used to add an object to the m_selected_objects_dict dictionary
     def add_object(self, name, value):
         self.m_selected_objects_dict[str(name)] = value
 
@@ -253,24 +205,24 @@ class RosContainerTab(ttk.Frame):
 
         for key, val in self.m_selected_objects_dict.iteritems():
             
-            # If container has access to the item & is part of the batch we're removing
+            #  If container has access to the item & is part of the batch we're removing
             if val.m_assigned_container == self.m_container_name and val.m_batch_type == batch.m_type:
                 rm_key_list.append(key)
         
-        # Need to remove items from tab dict (cant do it above since dict changes size)
+        #  Need to remove items from tab dict (cant do it above since dict changes size)
         for keyi in rm_key_list:
             self.remove_object(keyi)
             batch.release_sortable_object(keyi)
 
 
-    #  This method will remove an object with object name 'key' from the dictionary
+    ##  This method will remove an object with object name 'key' from the dictionary
     def remove_object(self, key):
         if self.m_selected_objects_dict.has_key(key):
             del self.m_selected_objects_dict[key]
 
 
 
-    #  This method will create a popup if some error occures
+    ##  This method will create a popup if some error occures
     def error_popup_msg(self, error_name, error_msg):
         title = "Error: " + str(error_name)
         tkMessageBox.showerror(title, error_msg)        
@@ -286,7 +238,7 @@ class RosContainerTab(ttk.Frame):
 
 
 
-    ##  This method will remove everything from the tab regarding sortable objects
+    ##  This method will remove everything from the tab regarding sortable objects, called by notebook
     def clean_destroy(self):
         rm_key_list = []
 

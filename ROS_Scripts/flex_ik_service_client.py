@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Copyright (c) 2019-2020, Philipp Domenico Tiso
+# Last edited by: Philipp Domenico Tiso 23 Feb 2020
+
 
 """
 Intera RSDK Inverse Kinematics Example

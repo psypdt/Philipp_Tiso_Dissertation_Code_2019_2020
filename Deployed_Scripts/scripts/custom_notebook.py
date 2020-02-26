@@ -36,9 +36,10 @@ class CustomNotebook(ttk.Notebook):
             ttk.Notebook.__init__(self, *args, **kwargs)
 
             self.__active = None
+            self.__deploying = True  # This flag is True if the software will run on actual hardware
 
             self.m_all_open_tabs_dict = dict()
-            self.m_all_containers_dict = self.read_all_containers()  # Dictionary containing all {container : position} pairs
+            self.m_all_containers_dict = self.read_all_containers(self.__deploying)  # Dictionary containing all {container : position} pairs
             
             self.m_active_container_dict = dict()  # Dictionary containing all active containers
             self.m_unused_containers_dict = self.m_all_containers_dict  # Dictionary of all unused containers 
@@ -52,7 +53,7 @@ class CustomNotebook(ttk.Notebook):
 
 
     ##  This method will read all containers from an xml and will return a dictionary containing its name and postition
-    def read_all_containers(self):
+    def read_all_containers(self, is_deploy):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         suffix = ".xml"
         filename = "container_positions"
@@ -82,19 +83,22 @@ class CustomNotebook(ttk.Notebook):
             y = item.find('./position/y_pos').text
             z = item.find('./position/z_pos').text
 
-            ox = item.find('./orientation/x_orient').text
-            oy = item.find('./orientation/y_orient').text
-            oz = item.find('./orientation/z_orient').text
-            ow = item.find('./orientation/w_orient').text
-
             container_position = Pose()
             container_position.position.x = float(x)
             container_position.position.y = float(y)
             container_position.position.z = float(z)
-            container_position.orientation.x = float(ox)
-            container_position.orientation.y = float(oy)
-            container_position.orientation.z = float(oz)
-            container_position.orientation.w = float(ow)
+
+            #  If files will be in the deployable structure using oritentation
+            if is_deploy:
+                ox = item.find('./orientation/x_orient').text
+                oy = item.find('./orientation/y_orient').text
+                oz = item.find('./orientation/z_orient').text
+                ow = item.find('./orientation/w_orient').text
+
+                container_position.orientation.x = float(ox)
+                container_position.orientation.y = float(oy)
+                container_position.orientation.z = float(oz)
+                container_position.orientation.w = float(ow)
 
             final_dict[str(container_name)] = container_position 
 
@@ -134,37 +138,38 @@ class CustomNotebook(ttk.Notebook):
 
             for item in objects:
                 if item.find('./type').text == obj_type:
-                    sortable_obj = self.build_sortable_object(item, obj_type)
+                    sortable_obj = self.build_sortable_object(item, obj_type, self.__deploying)
                     batch.m_available_objects_dict.update({item.attrib['name'] : sortable_obj})
             CustomNotebook.__sortable_batches.update({str(obj_type) : batch})
-
-        # for b in self.__sortable_batches.values():
-        #     print b.m_available_objects_dict
   
 
 
 
     ##  This method will take an ET Element and will return a sortable object
-    def build_sortable_object(self, et_element, obj_batch_type):
+    def build_sortable_object(self, et_element, obj_batch_type, is_deploy):
         name = str(et_element.attrib['name'])
 
         x = et_element.find('./position/x_pos').text
         y = et_element.find('./position/y_pos').text
         z = et_element.find('./position/z_pos').text
 
-        ox = et_element.find('./orientation/x_orient').text
-        oy = et_element.find('./orientation/y_orient').text
-        oz = et_element.find('./orientation/z_orient').text
-        ow = et_element.find('./orientation/w_orient').text
-
         obj_position = Pose()
         obj_position.position.x = float(x)
         obj_position.position.y = float(y)
         obj_position.position.z = float(z)
-        obj_position.orientation.x = float(ox)
-        obj_position.orientation.y = float(oy)
-        obj_position.orientation.z = float(oz)
-        obj_position.orientation.w = float(ow)
+
+        #  If files will be in the deployable structure using oritentation
+        if is_deploy:
+            ox = et_element.find('./orientation/x_orient').text
+            oy = et_element.find('./orientation/y_orient').text
+            oz = et_element.find('./orientation/z_orient').text
+            ow = et_element.find('./orientation/w_orient').text
+
+            obj_position.orientation.x = float(ox)
+            obj_position.orientation.y = float(oy)
+            obj_position.orientation.z = float(oz)
+            obj_position.orientation.w = float(ow)
+
 
         sortable = SortableObject(obj_name=name, obj_position=obj_position, batch_type=obj_batch_type)
 
@@ -221,14 +226,14 @@ class CustomNotebook(ttk.Notebook):
     ##  This method will destroy the tab once the close button has been released
     def on_close_release(self, event):
         
-        # Check if the close button really has been pressed
+        #  Check if the close button really has been pressed
         if not self.instate(['pressed']):
             return
 
         element = self.identify(event.x, event.y)
         index = self.index("@%d,%d" % (event.x, event.y))  # Get index of tab that has spawned the event
 
-        # Check if element should be closed, and that the current element is the same as the one we tracked
+        #  Check if element should be closed, and that the current element is the same as the one we tracked
         if "close" in element and index == self.__active:
             rm_tab = self.tab(index)['text']  # Get the key of the tab we are closing
             

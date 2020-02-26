@@ -2,7 +2,7 @@
 
 
 import rospy
-from psypdt_dissertation.msg import SortableObjectMessage
+from intera_examples.msg import SortableObjectMessage
 import Tkinter as tk
 import ttk
 

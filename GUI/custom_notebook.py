@@ -158,12 +158,12 @@ class CustomNotebook(ttk.Notebook):
         obj_position.position.y = float(y)
         obj_position.position.z = float(z)
 
-         #  If files will be in the deployable structure using oritentation
+        #  If files will be in the deployable structure using oritentation
         if is_deploy:
-            ox = item.find('./orientation/x_orient').text
-            oy = item.find('./orientation/y_orient').text
-            oz = item.find('./orientation/z_orient').text
-            ow = item.find('./orientation/w_orient').text
+            ox = et_element.find('./orientation/x_orient').text
+            oy = et_element.find('./orientation/y_orient').text
+            oz = et_element.find('./orientation/z_orient').text
+            ow = et_element.find('./orientation/w_orient').text
 
             obj_position.orientation.x = float(ox)
             obj_position.orientation.y = float(oy)
@@ -226,14 +226,14 @@ class CustomNotebook(ttk.Notebook):
     ##  This method will destroy the tab once the close button has been released
     def on_close_release(self, event):
         
-        # Check if the close button really has been pressed
+        #  Check if the close button really has been pressed
         if not self.instate(['pressed']):
             return
 
         element = self.identify(event.x, event.y)
         index = self.index("@%d,%d" % (event.x, event.y))  # Get index of tab that has spawned the event
 
-        # Check if element should be closed, and that the current element is the same as the one we tracked
+        #  Check if element should be closed, and that the current element is the same as the one we tracked
         if "close" in element and index == self.__active:
             rm_tab = self.tab(index)['text']  # Get the key of the tab we are closing
             

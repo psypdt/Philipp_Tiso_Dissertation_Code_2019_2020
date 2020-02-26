@@ -44,7 +44,7 @@ class RosContainerTab(ttk.Frame):
 
 
 
-    #  This method will call all other methods which are responsible for setting up the tabs gui
+    ##  This method will call all other methods which are responsible for setting up the tabs gui
     def setup_widgets(self):
         self.setup_scrollable_frame()
         self.setup_container_info()
@@ -60,7 +60,7 @@ class RosContainerTab(ttk.Frame):
         self.selected_objects_label = tk.Label(self, textvariable=self.selection_label_var).grid(row=2, column=2, rowspan=3, columnspan=2, sticky="w")
 
 
-    ## Refactor this, pretty compact for a function atm
+    ##  Refactor this, pretty compact for a function atm
     def update_selected_objects_label(self):
         self.selection_label_var.set(self.get_selected_object_str())
 
@@ -193,7 +193,7 @@ class RosContainerTab(ttk.Frame):
             self.add_object(key, val)
 
 
-    ## This method can be used to add an object to the m_selected_objects_dict dictionary
+    ##  This method can be used to add an object to the m_selected_objects_dict dictionary
     def add_object(self, name, value):
         self.m_selected_objects_dict[str(name)] = value
 
@@ -205,24 +205,24 @@ class RosContainerTab(ttk.Frame):
 
         for key, val in self.m_selected_objects_dict.iteritems():
             
-            # If container has access to the item & is part of the batch we're removing
+            #  If container has access to the item & is part of the batch we're removing
             if val.m_assigned_container == self.m_container_name and val.m_batch_type == batch.m_type:
                 rm_key_list.append(key)
         
-        # Need to remove items from tab dict (cant do it above since dict changes size)
+        #  Need to remove items from tab dict (cant do it above since dict changes size)
         for keyi in rm_key_list:
             self.remove_object(keyi)
             batch.release_sortable_object(keyi)
 
 
-    #  This method will remove an object with object name 'key' from the dictionary
+    ##  This method will remove an object with object name 'key' from the dictionary
     def remove_object(self, key):
         if self.m_selected_objects_dict.has_key(key):
             del self.m_selected_objects_dict[key]
 
 
 
-    #  This method will create a popup if some error occures
+    ##  This method will create a popup if some error occures
     def error_popup_msg(self, error_name, error_msg):
         title = "Error: " + str(error_name)
         tkMessageBox.showerror(title, error_msg)        

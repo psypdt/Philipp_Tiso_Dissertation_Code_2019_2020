@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import rospy
 import sys
+import os
 from geometry_msgs.msg import Pose
 from xml.etree import ElementTree as ModuleElementTree
 from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
@@ -104,14 +105,19 @@ def generate_xml_from_pos(pose, tag_main_element):
 
 
 ##  This method will write the generated xml snippets into an existing file containing containers or objects
-def append_to_xml_file(file=None, name=None, obj_type=None, pose=None):
-    with open(file, mode='r+') as xml_file:
+def append_to_xml_file(filename=None, name=None, obj_type=None, pose=None):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    suffix = ".xml"
+    
+    full_path = os.path.join(dir_path, filename + suffix)
+    
+    with open(name=full_path, mode='r+') as xml_file:
         #  Generate new tag
         raw_insertion_elem = generate_xml_from_data(name, obj_type, pose)
         
         try:
             #  Get root of the file, allows us to insert inbetween the root tag
-            root = ModuleElementTree.parse(file).getroot()  # Get all file contents
+            root = ModuleElementTree.parse(full_path).getroot()  # Get all file contents
             trimmed_insertion_elem = ModuleElementTree.fromstring(trim_xml_version_element(raw_insertion_elem))
 
             root.append(trimmed_insertion_elem)  # Insert at the bottom of the file
@@ -131,13 +137,15 @@ def append_to_xml_file(file=None, name=None, obj_type=None, pose=None):
 
 
 
-container_position = Pose()
-container_position.position.x = 1
-container_position.position.y = 2
-container_position.position.z = 3
-container_position.orientation.x = 4
-container_position.orientation.y = 5
-container_position.orientation.z = 6
-container_position.orientation.w = 7
+# container_position = Pose()
+# container_position.position.x = 1
+# container_position.position.y = 2
+# container_position.position.z = 3
+# container_position.orientation.x = 4
+# container_position.orientation.y = 5
+# container_position.orientation.z = 6
+# container_position.orientation.w = 7
 
-append_to_xml_file(file='testxml.xml', name="Orange Ball", obj_type="Ball", pose=container_position)
+
+
+# append_to_xml_file(file='testxml.xml', name="Orange Ball", obj_type="Ball", pose=container_position)

@@ -40,14 +40,14 @@ class Application(Frame):
     def __init__(self, master=None):
         #  ROS initialization
         rospy.init_node("main_gui_node")
-        self.publisher = rospy.Publisher('/ui/sort_command/execute', SortableObjectMsg, queue_size=10)
+        self.publisher = rospy.Publisher('ui/sortable_object/sorting/execute', SortableObjectMsg, queue_size=10)  # execute sorting task
         
-        self.shutdown_ik_pub = rospy.Publisher('rsdk_flex_ik_service_client/shudown', Bool, queue_size=10)
+        self.shutdown_ik_pub = rospy.Publisher('sawyer_ik_solver/change_to_state/shudown', Bool, queue_size=10)
 
-        self.add_object_pub = rospy.Publisher('ui/define_object_location/', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
+        self.add_object_pub = rospy.Publisher('ui/user/is_moving_arm', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
 
-        self.request_final_pos_pub = rospy.Publisher('/ui/new_object/state/done', Bool, queue_size=10)
-        self.final_obj_pos_sub = rospy.Subscriber('/live_pose_node/object/final_pose', Pose, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
+        self.request_final_pos_pub = rospy.Publisher('ui/new_object/state/is_located', Bool, queue_size=10)
+        self.final_obj_pos_sub = rospy.Subscriber('position_fetcher/new_object/final_pose', Pose, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
 
         rospy.Rate(10)
 

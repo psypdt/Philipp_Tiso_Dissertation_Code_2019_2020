@@ -12,7 +12,7 @@ class LiveViewFrame(ttk.Frame):
 
     def __init__(self, parent=None, i_all_containers=None, i_selected_objects=None):
         #  Create Subscribe to topic, cant create node since class runs in main_gui process
-        self.sub_sorted = rospy.Subscriber('data/sorting/sorted_objects', SortableObjectMessage, callback=self.update_container_status_callback, queue_size=10)  # Topic where sorted object:container pairs get sent to
+        self.sub_sorted = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMessage, callback=self.update_container_status_callback, queue_size=10)  # Topic where sorted object:container pairs get sent to
 
         ttk.Frame.__init__(self, parent)
         self.m_active_containers = i_all_containers
@@ -39,7 +39,6 @@ class LiveViewFrame(ttk.Frame):
 
         selected_label = tk.Label(self, text="Objects to sort:", font=("Helvetica", 10))
         self.object_list_label = ttk.Label(self, textvar=self.obj_selected_var, font=("Helvetica", 10), wraplength=250, justify='left')
-        
         
         self.object_list_label.pack(side='bottom')
         selected_label.pack(side='bottom')

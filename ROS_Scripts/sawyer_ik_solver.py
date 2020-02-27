@@ -53,16 +53,16 @@ class IKSolver:
     def __init__(self):
         self.is_adding_new_item = False  # This flag will be set to true if the user is in close proximity to the robot, flex_ik_service_client should immediatly exit
 
-        node = rospy.init_node("rsdk_flex_ik_service_client")
+        node = rospy.init_node("sawyer_ik_solver_node")
         rate = rospy.Rate(10)  # Publishing rate in Hz
         
         self.arm_speed = 0.3
         self.arm_timeout = 5
 
-        self.ik_sub_add_item = rospy.Subscriber('ui/define_object_location/', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
-        self.ik_pub_current_arm_pose = rospy.Publisher('/ik/new_object/live/pose', Pose, queue_size=10)
+        self.ik_sub_add_item = rospy.Subscriber('ui/user/is_moving_arm', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
+        self.ik_pub_current_arm_pose = rospy.Publisher('sawyer_ik_sorting/sawyer_arm/pose/current', Pose, queue_size=10)  # Publish current arm pose
 
-        self.ik_sub_locating_object_done = rospy.Subscriber('/ui/new_object/state/done', Bool, callback=self.send_current_pose, queue_size=10)  # Send pose to add_object_pose_node
+        self.ik_sub_locating_object_done = rospy.Subscriber('ui/new_object/state/is_located', Bool, callback=self.send_current_pose, queue_size=10)  
 
         #  Starts-up/enables the robot 
         try:
@@ -77,10 +77,10 @@ class IKSolver:
             rospy.signal_shutdown("Failed to enable Robot")
 
         #  Create a publisher that will publish strings to the ik_status topic
-        self.sorted_pub = rospy.Publisher('data/sorting/sorted_objects', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
+        self.sorted_pub = rospy.Publisher('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
 
-        ik_sub_sorting = rospy.Subscriber('/ui/sort_command/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=10)  # Subscribe to topic where sortable messages arrive
-        ik_sub_shutdown = rospy.Subscriber('rsdk_flex_ik_service_client/shudown', Bool, callback=self.shutdown_callback, queue_size=10)  # Topic where main_gui tells solver to shutdown
+        ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=10)  # Subscribe to topic where sortable messages arrive
+        ik_sub_shutdown = rospy.Subscriber('sawyer_ik_solver/change_to_state/shudown', Bool, callback=self.shutdown_callback, queue_size=10)  # Topic where main_gui tells solver to shutdown
 
         #  Move to default position when the ik solver is initially launched
         self.sawyer_arm = intera_interface.Limb('right')

@@ -3,7 +3,6 @@
 
 import rospy
 from intera_examples.msg import SortableObjectMessage
-
 from sortable_object_class import SortableObject
 
 

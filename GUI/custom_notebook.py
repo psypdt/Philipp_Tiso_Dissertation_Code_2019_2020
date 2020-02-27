@@ -36,10 +36,11 @@ class CustomNotebook(ttk.Notebook):
             ttk.Notebook.__init__(self, *args, **kwargs)
 
             self.__active = None
-            self.__deploying = False  # This flag is True if the software will run on actual hardware
+            self.__deploying = True  # This flag is True if the software will run on actual hardware
 
             self.m_all_open_tabs_dict = dict()
             self.m_all_containers_dict = self.read_all_containers(self.__deploying)  # Dictionary containing all {container : position} pairs
+            self.m_all_existing_object_types_list = []  # This list contains all existing object types, used to check if a new object has an existing type
             
             self.m_active_container_dict = dict()  # Dictionary containing all active containers
             self.m_unused_containers_dict = self.m_all_containers_dict  # Dictionary of all unused containers 
@@ -107,6 +108,62 @@ class CustomNotebook(ttk.Notebook):
 
 
 
+    ##  This method will be called when a new element is added]
+    ##  The method will read the last line in the relevant xml and will update the batch contents appropriatly
+    def update_batch_contents(self):
+        # Read file and get last entry
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        suffix = ".xml"
+        filename = "object_positions"
+
+        full_path = os.path.join(dir_path,filename+suffix)
+
+        try:
+            with open(full_path, 'rb') as xml_file:
+                tree = ET.parse(xml_file)
+        except Exception as e:
+            error = "Unable to find objects in file: " + str(filename + str(suffix)) + "\n\nAt location: " + str(full_path)
+            self.error_popup_msg("Can't find object file", error)
+            return None
+
+        root = tree.getroot()
+        all_xml_objects = [xml_obj for xml_obj in tree.findall('object')]
+
+        new_entry_element = all_xml_objects[-1]  # Get last object 
+        obj_type = new_entry_element.find('type').text
+
+        #  If the batch alrea
+        if obj_type in self.m_all_existing_object_types_list:
+    
+            #  Get the batch to which the object belongs
+            batch = CustomNotebook.__sortable_batches.get(obj_type)
+            sortable_object = self.build_sortable_object(new_entry_element, obj_type, self.__deploying)
+
+            #  Add object to batch & update the global batch shared instance
+            batch.m_available_objects_dict.update({new_entry_element.attrib['name'] : sortable_object})
+            CustomNotebook.__sortable_batches.update({obj_type : batch})
+        else:
+            #  Create a new batch since it doesn't exist yet
+            new_batch = SortableBatch(i_object_type=obj_type)
+            self.m_all_existing_object_types_list.append(obj_type)  # Append new batch type, if an object is created with the same batch later, then we know about that batch
+
+            sortable_object = self.build_sortable_object(new_entry_element, obj_type, self.__deploying)
+
+            #  Add object to new batch
+            new_batch.m_available_objects_dict.update({new_entry_element.attrib['name'] : sortable_object})
+            CustomNotebook.__sortable_batches.update({obj_type : new_batch})  # Add the new batch to the shared batch list
+        
+        self.refresh_tab_objects(obj_type)  # Force tabs to refresh their current state, to show newly added object or batch
+        
+        
+
+
+    ##  This method will refresh the available objects in the tabs
+    def refresh_tab_objects(self, modified_batch_name):
+        for container_tab in self.m_all_open_tabs_dict.values():
+            container_tab.refresh_toggled_batches(modified_batch_name)
+
+
 
     ##  This method will construct all batches and populate them with sortable objects
     def construct_batch_objects(self):
@@ -128,10 +185,10 @@ class CustomNotebook(ttk.Notebook):
         root = tree.getroot()
         objects = root.getchildren()
 
-        object_types = set([obj_type.text for obj_type in root.iter('type')])  # List of all object types in .xml
+        self.m_all_existing_object_types_list = list(set([obj_type.text for obj_type in root.iter('type')]))  # List of all object types in .xml
 
         #  Create all batch object instances
-        for obj_type in object_types:
+        for obj_type in self.m_all_existing_object_types_list:
 
             #  Populate batch class 
             batch = SortableBatch(i_object_type=obj_type)
@@ -169,7 +226,6 @@ class CustomNotebook(ttk.Notebook):
             obj_position.orientation.y = float(oy)
             obj_position.orientation.z = float(oz)
             obj_position.orientation.w = float(ow)
-
 
         sortable = SortableObject(obj_name=name, obj_position=obj_position, batch_type=obj_batch_type)
 
@@ -211,7 +267,6 @@ class CustomNotebook(ttk.Notebook):
     ##  This method will called when the close tab button is pressed, it will receive the event and react
     ##  This method will NOT close the actual tab, but it will record the tab index which should be killed, once the button has been released
     def on_close_press(self, event):
-        
         element = self.identify(event.x, event.y)  # Get the name and possition of the tab that spawned the event
 
         #  Check that tab is up to be closed, and that there are atleast 2 tabs open (not allowed to close all tabs)

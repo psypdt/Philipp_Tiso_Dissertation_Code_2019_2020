@@ -25,7 +25,6 @@ class ObjectLocalization:
 
     ##  Trivial callback that assigns the received pose to a member variable
     def is_done_callback(self, state):
-        print('IS DONE')
         self.has_finished = state.data
         
         # self.done_pub.publish(self.current_pose)
@@ -34,7 +33,6 @@ class ObjectLocalization:
 
     ##  This callback will send the final pose to the UI
     def send_final_to_ui(self, data):
-        print('send final to ui %s' % data)
         
         if self.has_finished:
             self.done_pub.publish(data)

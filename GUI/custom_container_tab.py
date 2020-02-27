@@ -5,7 +5,7 @@ from geometry_msgs.msg import Pose
 
 import os
 from sortable_object_class import SortableObject
-from toggle_frame_class import ToggledFrame
+from toggle_frame_class import ToggledBatchFrame
 
 import xml.etree.ElementTree as ET
 import json
@@ -36,9 +36,6 @@ class RosContainerTab(ttk.Frame):
         RosContainerTab.__container_batches = i_batches
 
         self.m_selected_objects_dict = {}  # Dictionary containing all selected objects
-        self.m_all_objects = dict()  # Dictionary containing all objects from xml file (name : SortableObject)
-        self.m_checkbox_state_list = []  # List containing all checkbox states
-        self.m_checkbox_name_state_dict = dict()  # Dictionary for all checkboxes
 
         #  All this is for the toggle states
         self.m_object_checkbox_state_list = []  # List of checkbox states for individual objects
@@ -110,7 +107,7 @@ class RosContainerTab(ttk.Frame):
         self.vscrollbar.grid(row=0, column=4, sticky="nsw")
         self.toggle_canvas.configure(yscrollcommand=self.vscrollbar.set)
 
-        #  Create Frame for ToggledFrame objects
+        #  Create Frame for ToggledBatchFrame objects
         self.toggled_frame = Frame(self.toggle_canvas)
         self.toggle_canvas.create_window((0,0), window=self.toggled_frame, anchor='ne')
         self.toggled_frame.grid(row=0, column=2)
@@ -124,7 +121,7 @@ class RosContainerTab(ttk.Frame):
         if rows < 5:
             rows_to_show = rows
 
-        self.toggle_widgets = [ToggledFrame(None) for x in xrange(rows)]
+        self.toggle_widgets = [ToggledBatchFrame(None) for x in xrange(rows)]
         
 
         #  Create list so that we can scale the scroll view to the appropriate size of the buttons
@@ -152,7 +149,7 @@ class RosContainerTab(ttk.Frame):
         for _, name in enumerate(RosContainerTab.__container_batches.keys(), 1):
             batch_name = str(name)
 
-            self.toggle_widgets[x] = ToggledFrame(self.toggled_frame, collection_name=batch_name)
+            self.toggle_widgets[x] = ToggledBatchFrame(self.toggled_frame, collection_name=batch_name)
             self.toggle_widgets[x].grid(row=x, column=0, sticky="w")
             # self.toggle_widgets[x].pack(side="top", fill="x", expand=1, pady=2, padx=2, anchor="nw")
             self.create_toggle_subelements(batch_name, self.toggle_widgets[x])  # Create subelements
@@ -240,7 +237,7 @@ class RosContainerTab(ttk.Frame):
             self.create_toggle_subelements(modified_batch_name, toggled_widget, is_existing_batch=True)
 
         else:
-            new_toggle = ToggledFrame(self.toggled_frame, collection_name=modified_batch_name)
+            new_toggle = ToggledBatchFrame(self.toggled_frame, collection_name=modified_batch_name)
             x = len(self.toggle_widgets)  # Use this to find where the new toggle should be placed
             self.toggle_widgets.append(new_toggle)
             self.toggle_widgets[x].grid(row=x, column=0, sticky="w")

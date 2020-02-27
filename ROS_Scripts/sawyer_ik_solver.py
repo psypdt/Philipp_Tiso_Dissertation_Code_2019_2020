@@ -15,14 +15,10 @@
 # limitations under the License.
 
 
-"""
-Intera RSDK Inverse Kinematics Example
-"""
+
 from __future__ import print_function
 
 import rospy
-from rospy_tutorials.msg import Floats
-from rospy.numpy_msg import numpy_msg
 
 import Tkinter as tk
 import tkMessageBox
@@ -51,14 +47,17 @@ from intera_core_msgs.srv import (
 )
 
 
-class IKSolver:
 
+class IKSolver:
 
     def __init__(self):
         self.is_adding_new_item = False  # This flag will be set to true if the user is in close proximity to the robot, flex_ik_service_client should immediatly exit
 
         node = rospy.init_node("rsdk_flex_ik_service_client")
         rate = rospy.Rate(10)  # Publishing rate in Hz
+        
+        self.arm_speed = 0.3
+        self.arm_timeout = 5
 
         self.ik_sub_add_item = rospy.Subscriber('ui/define_object_location/', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
         self.ik_pub_current_arm_pose = rospy.Publisher('/ik/new_object/live/pose', Pose, queue_size=10)
@@ -85,7 +84,7 @@ class IKSolver:
 
         #  Move to default position when the ik solver is initially launched
         self.sawyer_arm = intera_interface.Limb('right')
-        self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28) 
+        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed) 
         
         rospy.spin()
 
@@ -147,7 +146,6 @@ class IKSolver:
             seed = JointState()  #  JointState describes the state of each joint (possition, velocity, effort)
             seed.name = ['right_j0', 'right_j1', 'right_j2', 'right_j3', 'right_j4', 'right_j5', 'right_j6']  #  The name of the various joints
 
-            #  TODO Figure out why these values are used
             seed.position = [0.7, 0.4, -1.7, 1.4, -1.1, -1.6, -0.4]  #  The joint angle at which the solver tries to do optimisation for the respective joints
 
             #  Pass the seeded angles to the Solver via the SolvePositionIKRequest object
@@ -167,10 +165,9 @@ class IKSolver:
             goal.position = [0.1, -0.3, 0.5]  #  If these possitions are encountered, try to do some optimisation
             ik_ServiceReq.nullspace_goal.append(goal) 
 
-            #  TODO Figure out what this means, and why the null space gain must be [0.0, 1.0] or by default 0.4 if its empty
             ik_ServiceReq.nullspace_gain.append(0.4)
-        else:
-            rospy.loginfo("Using Simple IK Solver")
+        # else:
+        #     rospy.loginfo("Using Simple IK Solver")
 
 
         ##############################################################################################
@@ -178,16 +175,16 @@ class IKSolver:
         #  PASS THE INVERSE KINEMATICS REQUEST TO THE SOLVER TO GET AN ACTUAL PATH FOR THE ROBOT
         #
         ##############################################################################################
-        rospy.loginfo("Simple IKService Solver Running...")
+        # rospy.loginfo("Simple IKService Solver Running...")
 
         try:
-            rospy.wait_for_service(service_name, timeout=5.0)  #  Waits for the service (5 seconds), creates the service if it doesn't already exist
+            rospy.wait_for_service(service_name, timeout=self.arm_timeout)  #  Waits for the service (5 seconds), creates the service if it doesn't already exist
             response = ik_ServiceClient(ik_ServiceReq)  #  Get the response from the client, contains the joint positions  
         except (rospy.ServiceException, rospy.ROSException), ex:
             rospy.logerr("Service Call Failed: %s" % (ex,))
             return False
 
-        rospy.loginfo("Advanced IKService Solver Running... ")
+        # rospy.loginfo("Advanced IKService Solver Running... ")
 
 
         #  Check if the result is valid, and what seed was used to obtain the solution
@@ -203,14 +200,15 @@ class IKSolver:
             #  Format the joints such that they can be passed to the robot by making a Limb-API complient dictionary
             joint_solution = dict(zip(response.joints[0].name, response.joints[0].position))
 
-            rospy.loginfo("\nIK Joint Solution:\n%s", joint_solution)
-            rospy.loginfo("------------------")
-            rospy.loginfo("Response Message:\n%s", response)
+            # rospy.loginfo("\nIK Joint Solution:\n%s", joint_solution)
+            # rospy.loginfo("------------------")
+            # rospy.loginfo("Response Message:\n%s", response)
 
-            rospy.loginfo("Moving To Target Pose...")
+            # rospy.loginfo("Moving To Target Pose...")
+
             #  Move the limb into the final position
             self.sawyer_arm = intera_interface.Limb(i_Limb)
-            self.sawyer_arm.set_joint_position_speed(0.28)  # Max ratio of joint speed is 0.2 (pretty slow)
+            self.sawyer_arm.set_joint_position_speed(self.arm_speed)  # Max ratio of joint speed is 0.2 (pretty slow)
             self.sawyer_arm.move_to_joint_positions(joint_solution)
             rospy.sleep(0.01)
         else:
@@ -229,11 +227,9 @@ class IKSolver:
         
         if self.is_adding_new_item == True:  # Return immediatly, user is in close proximity, not allowed to make any move 
             return 
-
-        # print(tmp_arm.pose())
         
         #  NOTE For the simulation, have timeout=5 and speed=0.2 otherwise it segfaults, or timeout=2, speed=0.28
-        self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
+        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
         rospy.sleep(2)
 
         #  Move to the object which will be picked up
@@ -246,10 +242,10 @@ class IKSolver:
             error_name = "Route Execution Failed (Invalid Position)"
             error_msg = "Object \'%s\' can't be reached" % str(object_name)
             self.ik_solver_error_msg(error_name, error_msg)
-            self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28)
+            self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
             return
 
-        self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28)
+        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
 
         #  Move the object to the location where the container is
         if self.flex_ik_service_client(i_Pose=data.msg_container_pose, i_UseAdvanced=True):
@@ -263,7 +259,7 @@ class IKSolver:
             error_name = "Route Execution Failed (Invalid Position)"
             error_msg = "Container \'%s\' can't be reached" % str(container_name)
             self.ik_solver_error_msg(error_name, error_msg)
-            self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28)
+            self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
 
 
 
@@ -285,7 +281,6 @@ class IKSolver:
 
         if self.is_adding_new_item:
             self.ik_pub_current_arm_pose.publish(current_pose)
-
 
 
 

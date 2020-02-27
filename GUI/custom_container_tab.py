@@ -148,7 +148,6 @@ class RosContainerTab(ttk.Frame):
         x = 0
         for _, name in enumerate(RosContainerTab.__container_batches.keys(), 1):
             batch_name = str(name)
-
             self.toggle_widgets[x] = ToggledBatchFrame(self.toggled_frame, collection_name=batch_name)
             self.toggle_widgets[x].grid(row=x, column=0, sticky="w")
             # self.toggle_widgets[x].pack(side="top", fill="x", expand=1, pady=2, padx=2, anchor="nw")
@@ -209,7 +208,7 @@ class RosContainerTab(ttk.Frame):
         var_name = str(check_widget.cget("variable"))  # Get the state variable
 
         if state == 0:
-            allocated_obj = batch.allocate_sortable_objects(1, self.m_container_pose, self.m_container_name)  # Get dictionary with object we can add
+            allocated_obj = batch.allocate_sortable_objects(object_name=obj_name, container_pose=self.m_container_pose, container_name=self.m_container_name)  # Get dictionary with object we can add
 
             if allocated_obj == None:
                 error_name = "Error while allocating object"
@@ -221,8 +220,8 @@ class RosContainerTab(ttk.Frame):
             self.add_batch_objects(allocated_obj)  # Use this method since it can handle any number of objects (0...n)
         else:
             self.remove_single_object_from_batch(obj_name, batch)
-
         self.update_selected_objects_label()
+
 
 
     ##  This method will add any new objects and batches to the current frame
@@ -239,6 +238,7 @@ class RosContainerTab(ttk.Frame):
         else:
             new_toggle = ToggledBatchFrame(self.toggled_frame, collection_name=modified_batch_name)
             x = len(self.toggle_widgets)  # Use this to find where the new toggle should be placed
+    
             self.toggle_widgets.append(new_toggle)
             self.toggle_widgets[x].grid(row=x, column=0, sticky="w")
             
@@ -287,6 +287,7 @@ class RosContainerTab(ttk.Frame):
         for key, val in self.m_selected_objects_dict.iteritems():
             if val.m_assigned_container == self.m_container_name and val.m_batch_type == batch.m_type:
                 can_delete = True
+                break
 
         if can_delete:
             self.remove_object(obj_key)

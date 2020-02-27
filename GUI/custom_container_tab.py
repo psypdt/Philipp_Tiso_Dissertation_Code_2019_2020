@@ -241,8 +241,8 @@ class RosContainerTab(ttk.Frame):
         
 
 
-    ##  Create all subelemetns for a batch
-    def create_toggle_subelements(self, batch_key, batch_widget):
+    ##  Create all subelemetns for a batch, set is_existing_batch to True if the batch already exists
+    def create_toggle_subelements(self, batch_key, batch_widget, is_existing_batch=False):
         batch = RosContainerTab.__container_batches.get(batch_key)
         batch_objects = batch.get_all_object_names()
 
@@ -250,13 +250,30 @@ class RosContainerTab(ttk.Frame):
         if batch_objects == None:
             return
 
+        #  Add a newly located object into an existing batch, "located drill which belongs into Tools"
+        if is_existing_batch:
+            outdated_batch_objects = self.m_object_checkbox_name_state_dict.keys()  # Get the name of all items currently displayed
+            new_obj_name = list(set(batch_objects) - set(outdated_batch_objects))[0]
+            
+            new_obj_val = tk.IntVar()
+
+            new_selection = tk.Checkbutton(batch_widget.sub_frame, text=new_obj_name, variable=new_obj_val, onvalue=1, offvalue=0)
+            new_selection.bind("<Button-1>", self.update_selected_toggled_objects_state)
+            new_selection.pack(anchor="w")
+
+            self.m_object_checkbox_state_list.append(new_obj_val)
+            self.m_object_checkbox_name_state_dict.update({new_obj_name : new_obj_val})
+            self.m_object_batch_relation_dict.update({new_obj_name : batch_key})
+            return
+        
+
         #  Create checkboxes for all objects and add them to the subwidget 
         for obj_name in batch_objects:
             obj_val = tk.IntVar()
 
             selection = tk.Checkbutton(batch_widget.sub_frame, text=obj_name, variable=obj_val, onvalue=1, offvalue=0)
             selection.bind("<Button-1>", self.update_selected_toggled_objects_state)
-            selection.pack()
+            selection.pack(anchor="w")
 
             self.m_object_checkbox_state_list.append(obj_val)
             self.m_object_checkbox_name_state_dict.update({obj_name : obj_val})
@@ -286,11 +303,11 @@ class RosContainerTab(ttk.Frame):
                 return
             
             self.add_batch_objects(allocated_obj)  # Use this method since it can handle any number of objects (0...n)
-
         else:
             self.remove_single_object_from_batch(obj_name, batch)
 
         self.update_selected_objects_label()
+
 
 
     ##  This method will add any new objects and batches to the current frame
@@ -301,8 +318,8 @@ class RosContainerTab(ttk.Frame):
         if modified_batch_name in existing_toggles:
             toggled_widget = self.m_batchKey_toggle_frame_dict.get(modified_batch_name)
             
-            # Get the new object we want to display under the widget
-            
+            #  Add to the existing batch
+            self.create_toggle_subelements(modified_batch_name, toggled_widget, is_existing_batch=True)
 
         else:
             new_toggle = ToggledFrame(self.toggled_frame, collection_name=modified_batch_name)

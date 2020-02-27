@@ -20,7 +20,7 @@ from custom_container_tab import RosContainerTab
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
 from sortable_object_class import SortableObject
 from object_position_updating_service import LiveViewFrame
-import ros_xml_manipulation as RXM
+from create_new_localised_object import ObjectLocationInputBox
 
 import xml.etree.ElementTree as ET
 
@@ -146,26 +146,13 @@ class Application(Frame):
 
 
 
-    ##  This is a callback 
+    ##  This is a callback which will get the pose of a new object the user wants to add
     def receive_new_object_final_pose_callback(self, pose):
         #  Ask the user to provide a name and type for the object
         self.top_lvl_prompt_window = tk.Toplevel(self.master)
         self.top_lvl_prompt_window.title("Create New Object")
         self.top_lvl_prompt_window.minsize(300,80)
         self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose, self.notebook)
-
-        # name_prompt = tkSimpleDialog.askstring('Object Name', 'What should this object be refered to as?')
-
-        # if name_prompt != None:
-
-        #     type_prompt = tkSimpleDialog.askstring('Object type', 'What class does this object belong? (Cubes, Screws, Balls, etc)')
-        
-        # dialogue = ObjectInputBox(self)
-
-        # name = str(dialogue.name_entry.get()).lower()
-        # obj_type = str(dialogue.type_entry.get()).lower()
-
-        # self.write_new_object_xml(name, obj_type, pose)
 
 
 
@@ -192,70 +179,6 @@ class Application(Frame):
         self.shutdown_ik_pub.publish(signal)
         rospy.signal_shutdown("User closed main ui window")
 
-
-
-
-
-
-##  TODO:  Refactor this into its own file
-class ObjectLocationInputBox(ttk.Frame):
-
-    ##  Need the Notebook to call the update method for the batch objects
-    def __init__(self, parent=None, obj_pose=None, notebook=None):
-        ttk.Frame.__init__(self, parent)
-        
-        self.new_pose = obj_pose
-        self.p_notebook = notebook  # The partents notebook which will update the gui
-
-        self.setup_widgets()
-        self.pack()
-
-
-    def setup_widgets(self):
-        
-        self.name_label = ttk.Label(self, text="Object Name (Hammer, Apple, etc.)")
-        self.name_entry = Entry(self)
-
-        # self.name_label.pack(side="left", anchor="w")
-        # self.name_entry.pack(side="right", anchor="e")
-
-
-        self.type_label = ttk.Label(self, text="Object Type (Tool, Fruit, etc.)")
-        self.type_entry = Entry(self)
-
-        # self.type_label.pack(side="left", anchor="w")
-        # self.type_entry.pack(side="right", anchor="e")
-        
-
-        self.name_label.grid(row=0, column=0, sticky="w", pady=2)
-        self.type_label.grid(row=1, column=0, sticky="w", pady=2)
-
-        self.name_entry.grid(row=0, column=1, pady=2)
-        self.type_entry.grid(row=1, column=1, pady=2)
-
-
-        self.done_button = Button(self, text="Done", command=self.write_new_object_xml)
-        self.cancel_button = Button(self, text="Cancel", command=self.master.destroy)
-
-        self.done_button.grid(row=3, column=0)
-        self.cancel_button.grid(row=3, column=1)
-
-
-
-    ##  This method will write a new object into an xml file that stores all existing objects
-    def write_new_object_xml(self):
-        new_name = str(self.name_entry.get())
-        new_type = str(self.type_entry.get())
-
-        if not new_name or not new_type or new_name == None or new_type == None:
-            return
-        
-        RXM.append_to_xml_file(filename="object_positions", name=new_name, obj_type=new_type, pose=self.new_pose)
-
-        if self.p_notebook != None:
-            self.p_notebook.update_batch_contents()
-
-        self.master.destroy()
 
 
 

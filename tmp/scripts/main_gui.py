@@ -47,7 +47,7 @@ class Application(Frame):
         self.add_object_pub = rospy.Publisher('ui/define_object_location/', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
 
         self.request_final_pos_pub = rospy.Publisher('/ui/new_object/state/done', Bool, queue_size=10)
-        self.final_obj_pos_sub = rospy.Subscriber('/live_pose_node/object/final_pose', Pose, callback=self.receive_new_object_final_pose, queue_size=10)  # Listen for final object position
+        self.final_obj_pos_sub = rospy.Subscriber('/live_pose_node/object/final_pose', Pose, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
 
         rospy.Rate(10)
 
@@ -69,7 +69,7 @@ class Application(Frame):
 
 
     ##  This method will send a SortableObjectMsg to the ik solver
-    def send_object_pos(self):
+    def send_object_to_sort(self):
         is_add_msg = Bool(data=False)
         self.add_object_pub.publish(is_add_msg)
 
@@ -88,7 +88,7 @@ class Application(Frame):
                 self.publisher.publish(msg)
                 
         self.top_lvl_window = tk.Toplevel(self.master)
-        self.top_lvl_window.title("Live View")
+        self.top_lvl_window.title("Live Sorting Progress")
         self.top_lvl_window.minsize(550,400)
         self.live_sort_window = LiveViewFrame(self.top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
 
@@ -101,7 +101,7 @@ class Application(Frame):
         style = ttk.Style()  # Create style for buttons
         style.configure("WR.TButton", foreground="white", background="red", width=20, height=20)
 
-        self.run = ttk.Button(self, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_pos())
+        self.run = ttk.Button(self, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_to_sort())
         self.run.pack(side='left', ipadx=10, padx=30)
 
         self.locate_object_button = ttk.Button(self, text="Create new object", command=self.add_new_object_pose)
@@ -130,7 +130,7 @@ class Application(Frame):
         is_add_msg = Bool(data=True)
         self.add_object_pub.publish(is_add_msg)
 
-        prompt = tkMessageBox.askokcancel('Locate new object', 'Once you have manually moved the arm over the object, please click \'OK\'')
+        prompt = tkMessageBox.askokcancel('Create New object', 'Please move the robot arm over an object you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
         is_add_msg = Bool(data=False)
 
         if prompt == True:
@@ -147,7 +147,7 @@ class Application(Frame):
 
 
     ##  This is a callback 
-    def receive_new_object_final_pose(self, pose):
+    def receive_new_object_final_pose_callback(self, pose):
         #  Ask the user to provide a name and type for the object
         # name_prompt = tkSimpleDialog.askstring('Object Name', 'What should this object be refered to as?')
 
@@ -197,7 +197,7 @@ class Application(Frame):
 
 
 
-
+##  TODO:  Refactor this into its own file
 class ObjectLocationInputBox(ttk.Frame):
 
     def __init__(self, parent=None, obj_pose=None):
@@ -268,9 +268,6 @@ def handle_close():
 
 root.protocol('WM_DELETE_WINDOW', handle_close)
 app.mainloop()
-
-
-
 
 
 

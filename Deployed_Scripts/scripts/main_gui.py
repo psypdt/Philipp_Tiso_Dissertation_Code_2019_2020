@@ -47,7 +47,7 @@ class Application(Frame):
         self.add_object_pub = rospy.Publisher('ui/define_object_location/', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
 
         self.request_final_pos_pub = rospy.Publisher('/ui/new_object/state/done', Bool, queue_size=10)
-        self.final_obj_pos_sub = rospy.Subscriber('/live_pose_node/object/final_pose', Pose, callback=self.receive_new_object_final_pose, queue_size=10)  # Listen for final object position
+        self.final_obj_pos_sub = rospy.Subscriber('/live_pose_node/object/final_pose', Pose, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
 
         rospy.Rate(10)
 
@@ -64,12 +64,12 @@ class Application(Frame):
         self.pack()
         self.createWidgets()
 
-        master.title('ROS TEST UI')
+        master.title('SAWYER SORTING TASK UI')
 
 
 
     ##  This method will send a SortableObjectMsg to the ik solver
-    def send_object_pos(self):
+    def send_object_to_sort(self):
         is_add_msg = Bool(data=False)
         self.add_object_pub.publish(is_add_msg)
 
@@ -88,7 +88,7 @@ class Application(Frame):
                 self.publisher.publish(msg)
                 
         self.top_lvl_window = tk.Toplevel(self.master)
-        self.top_lvl_window.title("Live View")
+        self.top_lvl_window.title("Live Sorting Progress")
         self.top_lvl_window.minsize(550,400)
         self.live_sort_window = LiveViewFrame(self.top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
 
@@ -101,10 +101,10 @@ class Application(Frame):
         style = ttk.Style()  # Create style for buttons
         style.configure("WR.TButton", foreground="white", background="red", width=20, height=20)
 
-        self.run = ttk.Button(self, text="RUN", style="WR.TButton", command= lambda: self.send_object_pos())
+        self.run = ttk.Button(self, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_to_sort())
         self.run.pack(side='left', ipadx=10, padx=30)
 
-        self.locate_object_button = ttk.Button(self, text="Add new object", command=self.add_new_object_pose)
+        self.locate_object_button = ttk.Button(self, text="Create new object", command=self.add_new_object_pose)
         self.locate_object_button.pack(side='right', ipadx=10, padx=30)
         
         self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.notebook))
@@ -130,7 +130,7 @@ class Application(Frame):
         is_add_msg = Bool(data=True)
         self.add_object_pub.publish(is_add_msg)
 
-        prompt = tkMessageBox.askokcancel('Locate new object', 'Once you have manually moved the arm over the object, please click \'OK\'')
+        prompt = tkMessageBox.askokcancel('Create New object', 'Please move the robot arm over an object you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
         is_add_msg = Bool(data=False)
 
         if prompt == True:
@@ -147,26 +147,26 @@ class Application(Frame):
 
 
     ##  This is a callback 
-    def receive_new_object_final_pose(self, pose):
-        print("Ask for user input")
+    def receive_new_object_final_pose_callback(self, pose):
         #  Ask the user to provide a name and type for the object
-        name_prompt = tkSimpleDialog.askstring('Object Name', 'What should this object be refered to as?')
+        # name_prompt = tkSimpleDialog.askstring('Object Name', 'What should this object be refered to as?')
 
-        if name_prompt != None:
+        # if name_prompt != None:
 
-            type_prompt = tkSimpleDialog.askstring('Object type', 'What class does this object belong? (Cubes, Screws, Balls, etc)')
+        #     type_prompt = tkSimpleDialog.askstring('Object type', 'What class does this object belong? (Cubes, Screws, Balls, etc)')
+        
+        # dialogue = ObjectInputBox(self)
 
-            name = str(name_prompt).lower()
-            obj_type = str(type_prompt).lower()
+        # name = str(dialogue.name_entry.get()).lower()
+        # obj_type = str(dialogue.type_entry.get()).lower()
 
-            self.write_new_object_xml(name, obj_type, pose)
+        # self.write_new_object_xml(name, obj_type, pose)
 
 
-
-    ##  This method will write a new object into an xml file that stores all existing objects
-    def write_new_object_xml(self, new_name, new_type, new_pose):
-        RXM.append_to_xml_file(file="object_positions.xml", name=new_name, obj_type=new_type, pose=new_pose)
-
+        self.top_lvl_prompt_window = tk.Toplevel(self.master)
+        self.top_lvl_prompt_window.title("Create New Object")
+        self.top_lvl_prompt_window.minsize(300,80)
+        self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose)
 
 
 
@@ -196,6 +196,65 @@ class Application(Frame):
 
 
 
+
+##  TODO:  Refactor this into its own file
+class ObjectLocationInputBox(ttk.Frame):
+
+    def __init__(self, parent=None, obj_pose=None):
+        ttk.Frame.__init__(self, parent)
+        
+        self.new_pose = obj_pose
+
+        self.setup_widgets()
+        self.pack()
+
+
+    def setup_widgets(self):
+        
+        self.name_label = ttk.Label(self, text="Object Name (Hammer, Apple, etc.)")
+        self.name_entry = Entry(self)
+
+        # self.name_label.pack(side="left", anchor="w")
+        # self.name_entry.pack(side="right", anchor="e")
+
+
+        self.type_label = ttk.Label(self, text="Object Type (Tool, Fruit, etc.)")
+        self.type_entry = Entry(self)
+
+        # self.type_label.pack(side="left", anchor="w")
+        # self.type_entry.pack(side="right", anchor="e")
+        
+
+        self.name_label.grid(row=0, column=0, sticky="w", pady=2)
+        self.type_label.grid(row=1, column=0, sticky="w", pady=2)
+
+        self.name_entry.grid(row=0, column=1, pady=2)
+        self.type_entry.grid(row=1, column=1, pady=2)
+
+
+        self.done_button = Button(self, text="Done", command=self.write_new_object_xml)
+        self.cancel_button = Button(self, text="Cancel", command=self.master.destroy)
+
+        self.done_button.grid(row=3, column=0)
+        self.cancel_button.grid(row=3, column=1)
+
+
+
+    ##  This method will write a new object into an xml file that stores all existing objects
+    def write_new_object_xml(self):
+        new_name = str(self.name_entry.get())
+        new_type = str(self.type_entry.get())
+
+        if not new_name or not new_type or new_name == None or new_type == None:
+            return
+        
+        RXM.append_to_xml_file(filename="object_positions", name=new_name, obj_type=new_type, pose=self.new_pose)
+
+        self.master.destroy()
+
+
+
+
 root = Tk()  # The window which will contain all components
 root.geometry('750x500')  # Default size of window 
 
@@ -209,9 +268,6 @@ def handle_close():
 
 root.protocol('WM_DELETE_WINDOW', handle_close)
 app.mainloop()
-
-
-
 
 
 

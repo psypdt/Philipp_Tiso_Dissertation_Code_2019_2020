@@ -3,26 +3,47 @@
 <root>
     <container name="Bucket">
         <position>
-            <x_pos>-0.50402</x_pos>
-            <y_pos>-0.6890</y_pos>
-            <z_pos>0.455</z_pos>
-        </position>
+			<x_pos>0.7519686121884195</x_pos>
+	        <y_pos>-0.3017746579997936</y_pos>
+            <z_pos>0.082403012433622</z_pos>
+		</position>
+
+		<orientation>
+			<x_orient>0.7075097486449031</x_orient>
+			<y_orient>0.7066922454878554</y_orient>
+			<z_orient>-0.0030913164974091362</z_orient>
+			<w_orient>-0.0025435215886281475</w_orient>
+		</orientation>
     </container>
 
     <container name="Box">
         <position>
-            <x_pos>-0.80402</x_pos>
-            <y_pos>0.290</y_pos>
-            <z_pos>0.75</z_pos>
-        </position>
+			<x_pos>0.7519686121884195</x_pos>
+	        <y_pos>-0.3017746579997936</y_pos>
+            <z_pos>0.082403012433622</z_pos>
+		</position>
+
+		<orientation>
+			<x_orient>0.7075097486449031</x_orient>
+			<y_orient>0.7066922454878554</y_orient>
+			<z_orient>-0.0030913164974091362</z_orient>
+			<w_orient>-0.0025435215886281475</w_orient>
+		</orientation>
     </container>
 
     <container name="Cardboard Box">
         <position>
-            <x_pos>0.10402</x_pos>
-            <y_pos>0.890</y_pos>
-            <z_pos>0.55</z_pos>
-        </position>
+			<x_pos>0.7519686121884195</x_pos>
+	        <y_pos>-0.3017746579997936</y_pos>
+            <z_pos>0.082403012433622</z_pos>
+		</position>
+
+		<orientation>
+			<x_orient>0.7075097486449031</x_orient>
+			<y_orient>0.7066922454878554</y_orient>
+			<z_orient>-0.0030913164974091362</z_orient>
+			<w_orient>-0.0025435215886281475</w_orient>
+		</orientation>
     </container>
 
 

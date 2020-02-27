@@ -2,7 +2,7 @@
 
 
 import rospy
-from psypdt_dissertation.msg import SortableObjectMessage
+from intera_examples.msg import SortableObjectMessage
 
 from sortable_object_class import SortableObject
 
@@ -21,26 +21,6 @@ class SortableBatch():
     def get_available_slots(self):
         return len(self.m_available_objects_dict)
 
-
-    def get_available_object_names(self):
-        return self.m_available_objects_dict.keys()
-
-    
-    ##  This method returns every object that exists within the batch
-    def get_all_object_names(self):
-        allocated_names = self.m_allocated_objects_dict.keys()
-        available_names = self.m_available_objects_dict.keys()
-
-        final_list = None
-
-        if len(allocated_names) > 0 and len(available_names) > 0:
-            final_list = allocated_names + available_names
-        elif len(allocated_names) <= 0:
-            final_list = available_names
-        elif len(available_names) <=0:
-            final_list = allocated_names
-        
-        return final_list
 
 
     ##  This method allows us to allocate n SortableObjects to a specific container returned as a list
@@ -61,6 +41,12 @@ class SortableBatch():
             # print "Allocated %s to Container: %s" % (key, container_name)
             
         return res_dict
+
+
+
+    ##  Allocate a specific object to a specific container
+    def allocate_single_object(self, obj_name, container_pose, container_name):
+        pass
 
 
 

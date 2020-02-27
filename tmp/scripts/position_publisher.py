@@ -51,7 +51,7 @@ def main():
     dictionary = read_all_objects()
 
     for (key, val) in dictionary.items():
-        rospy.loginfo("%s has %s" % (key, val))
+        print("%s has %s" % (key, val))
 
 
     start = Pose()

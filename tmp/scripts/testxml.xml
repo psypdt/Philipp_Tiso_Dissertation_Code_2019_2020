@@ -1,0 +1,42 @@
+<root>
+	<object name="Red Ball">
+		<type>Ball</type>
+		<position>
+			<x_pos>1</x_pos>
+			<y_pos>2</y_pos>
+			<z_pos>3</z_pos>
+		</position>
+		<orientation>
+			<x_orient>4</x_orient>
+			<y_orient>5</y_orient>
+			<z_orient>6</z_orient>
+			<w_orient>7</w_orient>
+		</orientation>
+	</object>
+<object name="Red Ball">
+	<type>Ball</type>
+	<position>
+		<x_pos>1</x_pos>
+		<y_pos>2</y_pos>
+		<z_pos>3</z_pos>
+	</position>
+	<orientation>
+		<x_orient>4</x_orient>
+		<y_orient>5</y_orient>
+		<z_orient>6</z_orient>
+		<w_orient>7</w_orient>
+	</orientation>
+</object><object name="Orange Ball">
+	<type>Ball</type>
+	<position>
+		<x_pos>1</x_pos>
+		<y_pos>2</y_pos>
+		<z_pos>3</z_pos>
+	</position>
+	<orientation>
+		<x_orient>4</x_orient>
+		<y_orient>5</y_orient>
+		<z_orient>6</z_orient>
+		<w_orient>7</w_orient>
+	</orientation>
+</object></root>

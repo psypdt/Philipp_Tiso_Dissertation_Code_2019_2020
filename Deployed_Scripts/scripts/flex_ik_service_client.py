@@ -59,6 +59,9 @@ class IKSolver:
 
         node = rospy.init_node("rsdk_flex_ik_service_client")
         rate = rospy.Rate(10)  # Publishing rate in Hz
+        
+        self.arm_speed = 0.3
+        self.arm_timeout = 5
 
         self.ik_sub_add_item = rospy.Subscriber('ui/define_object_location/', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
         self.ik_pub_current_arm_pose = rospy.Publisher('/ik/new_object/live/pose', Pose, queue_size=10)
@@ -74,7 +77,7 @@ class IKSolver:
             print(ex)
             error_name = "IK solver crashed!"
             error_msg = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\nPlese restart the program."
-            ik_solver_error_msg(error_name, error_msg)  # Display error if robot can't be enabled
+            self.ik_solver_error_msg(error_name, error_msg)  # Display error if robot can't be enabled
             rospy.signal_shutdown("Failed to enable Robot")
 
         #  Create a publisher that will publish strings to the ik_status topic
@@ -85,7 +88,7 @@ class IKSolver:
 
         #  Move to default position when the ik solver is initially launched
         self.sawyer_arm = intera_interface.Limb('right')
-        self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28) 
+        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed) 
         
         rospy.spin()
 
@@ -181,7 +184,7 @@ class IKSolver:
         rospy.loginfo("Simple IKService Solver Running...")
 
         try:
-            rospy.wait_for_service(service_name, timeout=5.0)  #  Waits for the service (5 seconds), creates the service if it doesn't already exist
+            rospy.wait_for_service(service_name, timeout=self.arm_timeout)  #  Waits for the service (5 seconds), creates the service if it doesn't already exist
             response = ik_ServiceClient(ik_ServiceReq)  #  Get the response from the client, contains the joint positions  
         except (rospy.ServiceException, rospy.ROSException), ex:
             rospy.logerr("Service Call Failed: %s" % (ex,))
@@ -210,7 +213,7 @@ class IKSolver:
             rospy.loginfo("Moving To Target Pose...")
             #  Move the limb into the final position
             self.sawyer_arm = intera_interface.Limb(i_Limb)
-            self.sawyer_arm.set_joint_position_speed(0.28)  # Max ratio of joint speed is 0.2 (pretty slow)
+            self.sawyer_arm.set_joint_position_speed(self.arm_speed)  # Max ratio of joint speed is 0.2 (pretty slow)
             self.sawyer_arm.move_to_joint_positions(joint_solution)
             rospy.sleep(0.01)
         else:
@@ -226,14 +229,14 @@ class IKSolver:
     #  This function gets called as soon as we get some data from the "move_to_dest/goal" topic
     #  Data contains both the start and the end possition respectively
     def sort_object_callback(self, data):
-        print("sort callback %s" % self.is_adding_new_item)
+        
         if self.is_adding_new_item == True:  # Return immediatly, user is in close proximity, not allowed to make any move 
             return 
 
         # print(tmp_arm.pose())
         
         #  NOTE For the simulation, have timeout=5 and speed=0.2 otherwise it segfaults, or timeout=2, speed=0.28
-        self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
+        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
         rospy.sleep(2)
 
         #  Move to the object which will be picked up
@@ -245,11 +248,11 @@ class IKSolver:
             rospy.logwarn("Route Execution Failed: Invalid target object position")
             error_name = "Route Execution Failed (Invalid Position)"
             error_msg = "Object \'%s\' can't be reached" % str(object_name)
-            ik_solver_error_msg(error_name, error_msg)
-            self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28)
+            self.ik_solver_error_msg(error_name, error_msg)
+            self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
             return
 
-        self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28)
+        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
 
         #  Move the object to the location where the container is
         if self.flex_ik_service_client(i_Pose=data.msg_container_pose, i_UseAdvanced=True):
@@ -262,8 +265,8 @@ class IKSolver:
             rospy.logwarn("Route Execution Failed: Invalid target container position")
             error_name = "Route Execution Failed (Invalid Position)"
             error_msg = "Container \'%s\' can't be reached" % str(container_name)
-            ik_solver_error_msg(error_name, error_msg)
-            self.sawyer_arm.move_to_neutral(timeout=5, speed=0.28)
+            self.ik_solver_error_msg(error_name, error_msg)
+            self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
 
 
 
@@ -300,8 +303,6 @@ class IKSolver:
     def shutdown_callback(self, data):
         if data == True:
             rospy.signal_shutdown("Main GUI terminated")
-
-
 
 
 

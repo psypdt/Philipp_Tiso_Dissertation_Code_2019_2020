@@ -170,11 +170,16 @@ class CustomNotebook(ttk.Notebook):
             obj_position.orientation.z = float(oz)
             obj_position.orientation.w = float(ow)
 
-
         sortable = SortableObject(obj_name=name, obj_position=obj_position, batch_type=obj_batch_type)
 
         return sortable
 
+
+
+    ##  This method will be called when a new element is added]
+    ##  The method will read the last line in the relevant xml and will update the batch contents appropriatly
+    def update_batch_contents(self):
+        pass
 
 
 

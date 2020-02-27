@@ -7,10 +7,6 @@ import Tkinter as tk
 import ttk
 
 
-existing_containers_dict = dict()  # Dictionary containing container name and StringVar detailing all sorted objects
-selected_objects_label = []
-
-
 
 class LiveViewFrame(ttk.Frame):
 

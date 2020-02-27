@@ -19,7 +19,7 @@ from custom_container_tab import RosContainerTab
 #  Helper class imports
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
 from sortable_object_class import SortableObject
-from object_position_updating_service import LiveViewFrame
+from live_sorting_progress_view_class import LiveViewFrame
 from create_new_localised_object import ObjectLocationInputBox
 
 import xml.etree.ElementTree as ET

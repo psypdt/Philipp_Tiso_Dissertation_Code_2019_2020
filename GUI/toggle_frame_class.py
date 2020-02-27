@@ -6,10 +6,8 @@ import ttk
 
 
 
-
-
 ##  This class will allow us to have a dropdown menue 
-class ToggledFrame(tk.Frame):
+class ToggledBatchFrame(tk.Frame):
 
     def __init__(self, parent, collection_name="N/A", *args, **options):
         tk.Frame.__init__(self, parent, *args, **options)
@@ -40,30 +38,3 @@ class ToggledFrame(tk.Frame):
         else:
             self.sub_frame.forget()
             self.toggle_button.configure(text='+')
-
-
-
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-
-    t = ToggledFrame(root, collection_name='Rotate', relief="raised", borderwidth=1)
-    t.pack(fill="x", expand=1, pady=2, padx=2, anchor="n")
-
-    ttk.Label(t.sub_frame, text='Rotation [deg]:').pack(side="left", fill="x", expand=1)
-    ttk.Entry(t.sub_frame).pack(side="left")
-
-    t2 = ToggledFrame(root, collection_name='Resize', relief="raised", borderwidth=1)
-    t2.pack(fill="x", expand=1, pady=2, padx=2, anchor="n")
-
-    for i in range(10):
-        ttk.Label(t2.sub_frame, text='Test' + str(i)).pack()
-
-    t3 = ToggledFrame(root, collection_name='Fooo', relief="raised", borderwidth=1)
-    t3.pack(fill="x", expand=1, pady=2, padx=2, anchor="n")
-
-    for i in range(10):
-        tk.Checkbutton(t3.sub_frame, text='Bar' + str(i)).pack()
-
-    root.mainloop()

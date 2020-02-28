@@ -60,11 +60,16 @@ class LiveViewFrame(ttk.Frame):
         self.canvas = tk.Canvas(self)
 
         self.container_TreeView = ttk.Treeview(self.canvas)
-        self.container_TreeView["columns"] = ["Container", "Item"]
+        self.container_TreeView["columns"] = ["Container", "Item", "Status"]
         self.container_TreeView["show"] = "headings"
 
+        #  Create headers for treeview
         self.container_TreeView.heading("Container", text="Container")    
         self.container_TreeView.heading("Item", text="Item")
+        self.container_TreeView.heading("Status", text="Status")  # Did the sorting fail or succeed 
+
+        #  Define some highliting for identifying failed sorts
+        self.container_TreeView.tag_configure('failed_sort', background='red')  # Anything with this tag will be highlited in red
 
         #  Create horizontal scrollbar
         treeXscroll = ttk.Scrollbar(self.canvas, orient="horizontal")
@@ -105,20 +110,18 @@ class LiveViewFrame(ttk.Frame):
                 is_complete = Bool(data=True)
                 self.completed_sorting_pub.publish(is_complete)
 
-            self.container_TreeView.insert("", tk.END,values=(str(data.container_name), str(data.object_name)))
+            self.container_TreeView.insert("", tk.END, values=(str(data.container_name).capitalize(), str(data.object_name).capitalize(), "SORTED"))
         else:
             self.__item_lock.release()  # Release to prevent blocking
         
 
 
 
-    ##  TODO: Make this thread safe
     ##  Handle cases where an object was not sorted correctly
     def handle_failed_sort_callback(self, data):
         self.__item_lock.acquire() # Get lock for critical section
-        print("Got failure")
 
-        if len(self.m_selected_objects) >= 1 and data.object_name in self.m_selected_objects:
+        if len(self.m_selected_objects) >= 1 and data.object_name in self.m_selected_objects:  # Check if object is in list
             self.m_selected_objects.remove(data.object_name)
             
             self.__item_lock.release()  # End of critical section 
@@ -130,6 +133,6 @@ class LiveViewFrame(ttk.Frame):
                 is_complete = Bool(data=True)
                 self.completed_sorting_pub.publish(is_complete)
 
-            self.container_TreeView.insert("", tk.END,values=(str(data.container_name), str(data.object_name + ' FAILED')))
+            self.container_TreeView.insert("", tk.END, values=(str(data.container_name).capitalize(), str(data.object_name).capitalize(), "FAILED"), tags=('failed_sort',))
         else:
             self.__item_lock.release()  # Release lock to prevent blocking

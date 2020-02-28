@@ -1,63 +1,68 @@
 <root>
-	<object name="Purple Block">
-        <type>Blocks</type>
-
-        <position>
-            <x_pos>0.774271346839804</x_pos>
-            <y_pos>0.4149851350604493</y_pos>
-            <z_pos>0.09272016422888248</z_pos>
-        </position>
-
-	<orientation>
-			<x_orient>0.7036701937019578</x_orient>
-			<y_orient>0.70910765949065</y_orient>
-			<z_orient>-0.028881811666858485</z_orient>
-			<w_orient>-0.03435733840072594</w_orient>
-		</orientation>
-	</object>
 	
-	<object name="Orange Block">
-		<type>Blocks</type>
-
-		<position>
-			<x_pos>0.7519686121884195</x_pos>
-	        <y_pos>-0.3017746579997936</y_pos>
-            <z_pos>0.082403012433622</z_pos>
-		</position>
-
-		<orientation>
-			<x_orient>0.7075097486449031</x_orient>
-			<y_orient>0.7066922454878554</y_orient>
-			<z_orient>-0.0030913164974091362</z_orient>
-			<w_orient>-0.0025435215886281475</w_orient>
-		</orientation>
-</object>
-
-
-<object name="New Entry">
-	<type>New Type</type>
+<object name="blue block">
+	<type>blocks</type>
 	<position>
-		<x_pos>0.790042598584</x_pos>
-		<y_pos>0.0682350979136</y_pos>
-		<z_pos>0.112069115066</z_pos>
+		<x_pos>0.752849902811</x_pos>
+		<y_pos>0.448287137232</y_pos>
+		<z_pos>0.106100287563</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.997244513555</x_orient>
-		<y_orient>0.0658701911646</y_orient>
-		<z_orient>0.00408691250496</z_orient>
-		<w_orient>0.0338791269921</w_orient>
+		<x_orient>0.725798562903</x_orient>
+		<y_orient>0.686658138169</y_orient>
+		<z_orient>-0.03512557319</z_orient>
+		<w_orient>0.0219827541974</w_orient>
 	</orientation>
-</object><object name="Object 2">
-	<type>Some type</type>
+</object><object name="red block">
+	<type>blocks</type>
 	<position>
-		<x_pos>0.667618464991</x_pos>
-		<y_pos>0.547796872224</y_pos>
-		<z_pos>0.092521492606</z_pos>
+		<x_pos>0.843201828909</x_pos>
+		<y_pos>0.0390223509285</y_pos>
+		<z_pos>0.0853385147962</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.787298541958</x_orient>
-		<y_orient>-0.606751735484</y_orient>
-		<z_orient>0.092747107</z_orient>
-		<w_orient>0.0584064333885</w_orient>
+		<x_orient>-0.0555101314266</x_orient>
+		<y_orient>0.998263985088</y_orient>
+		<z_orient>0.0178810093372</z_orient>
+		<w_orient>-0.00824080644613</w_orient>
+	</orientation>
+</object><object name="long green rectangle">
+	<type>other batch</type>
+	<position>
+		<x_pos>0.558649881877</x_pos>
+		<y_pos>0.0402556325646</y_pos>
+		<z_pos>0.0859650333313</z_pos>
+	</position>
+	<orientation>
+		<x_orient>0.997536830384</x_orient>
+		<y_orient>0.0329029881102</y_orient>
+		<z_orient>-0.0615213086924</z_orient>
+		<w_orient>-0.00726594646446</w_orient>
+	</orientation>
+</object><object name="short brown rectangle">
+	<type>other batch</type>
+	<position>
+		<x_pos>0.606218028003</x_pos>
+		<y_pos>0.254607551269</y_pos>
+		<z_pos>0.0805461073219</z_pos>
+	</position>
+	<orientation>
+		<x_orient>0.68570846498</x_orient>
+		<y_orient>0.725898960414</y_orient>
+		<z_orient>-0.0533483944605</z_orient>
+		<w_orient>-0.00534313885061</w_orient>
+	</orientation>
+</object><object name="wide green rectangle">
+	<type>other batch</type>
+	<position>
+		<x_pos>0.48456314591</x_pos>
+		<y_pos>0.433685428688</y_pos>
+		<z_pos>0.10129963096</z_pos>
+	</position>
+	<orientation>
+		<x_orient>-0.0169062808669</x_orient>
+		<y_orient>0.999061959262</y_orient>
+		<z_orient>-0.0130913705619</z_orient>
+		<w_orient>-0.0376562775715</w_orient>
 	</orientation>
 </object></root>

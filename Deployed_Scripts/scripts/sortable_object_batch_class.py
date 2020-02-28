@@ -3,7 +3,6 @@
 
 import rospy
 from psypdt_dissertation.msg import SortableObjectMessage
-
 from sortable_object_class import SortableObject
 
 
@@ -44,23 +43,21 @@ class SortableBatch():
 
 
     ##  This method allows us to allocate n SortableObjects to a specific container returned as a list
-    def allocate_sortable_objects(self, n, container_pose, container_name):
-        if n > len(self.m_available_objects_dict):
-            return None
+    def allocate_sortable_objects(self, object_name=None, container_pose=None, container_name=None):
+        res_dict = dict()  # Dictionary of all available items
 
-        res_dict = dict()
-
-        for i in range(n):
-            key, val = self.m_available_objects_dict.popitem()
-            self.m_allocated_objects_dict.update({key : val})
+        #  Allocate a specific item
+        if object_name != None and self.m_available_objects_dict.has_key(object_name):
+            val = self.m_available_objects_dict.pop(object_name)
+            self.m_allocated_objects_dict.update({object_name : val})
 
             val.m_container_pose = container_pose
             val.m_assigned_container = container_name
-            res_dict.update({key : val})
-
-            # print "Allocated %s to Container: %s" % (key, container_name)
-            
-        return res_dict
+            res_dict.update({object_name : val})
+            # print "Allocated %s to Container: %s" % (object_name, container_name)
+            return res_dict
+        
+        return None
 
 
 

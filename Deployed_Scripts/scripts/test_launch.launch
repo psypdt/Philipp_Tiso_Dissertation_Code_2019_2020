@@ -1,5 +1,5 @@
 <launch>
     <node name="main_gui_node" pkg="psypdt_dissertation" type="main_gui.py" output="screen"/>
-    <node name="rsdk_flex_ik_service_client" pkg="psypdt_dissertation" type="flex_ik_service_client.py" output="screen"/>
-    <node name="live_item_pose_node" pkg="psypdt_dissertation" type="add_object_pose_node.py" output="screen" />
+    <node name="sawyer_ik_solver_node" pkg="psypdt_dissertation" type="sawyer_ik_solver.py" output="screen"/>
+    <node name="sawyer_arm_position_fetcher_node" pkg="psypdt_dissertation" type="fetch_new_object_position_publisher.py" output="screen" />
 </launch>

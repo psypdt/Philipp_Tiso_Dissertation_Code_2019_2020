@@ -52,17 +52,18 @@ class IKSolver:
 
     def __init__(self):
         self.is_adding_new_item = False  # This flag will be set to true if the user is in close proximity to the robot, flex_ik_service_client should immediatly exit
+        self.has_returned_home = False  # False implies "The user wants to create an object, but im not in the default position, so I'll move there now"
 
         node = rospy.init_node("sawyer_ik_solver_node")
         rate = rospy.Rate(10)  # Publishing rate in Hz
         
-        self.arm_speed = 0.3
+        self.arm_speed = 0.28
         self.arm_timeout = 5
 
         self.ik_sub_add_item = rospy.Subscriber('ui/user/is_moving_arm', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
         self.ik_pub_current_arm_pose = rospy.Publisher('sawyer_ik_sorting/sawyer_arm/pose/current', Pose, queue_size=10)  # Publish current arm pose
 
-        self.ik_sub_locating_object_done = rospy.Subscriber('ui/new_object/state/is_located', Bool, callback=self.send_current_pose, queue_size=10)  
+        self.ik_sub_locating_object_done = rospy.Subscriber('ui/new_object/state/is_located', Bool, callback=self.send_current_pose_callback, queue_size=10)  
 
         #  Starts-up/enables the robot 
         try:
@@ -78,6 +79,7 @@ class IKSolver:
 
         #  Create a publisher that will publish strings to the ik_status topic
         self.sorted_pub = rospy.Publisher('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
+        self.sorting_error_pub = rospy.Publisher('sawyer_ik_solver/sorting/has_failed', SortableObjectMsg, queue_size=10)  # This will publish the object & container pair which has failed
 
         ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=10)  # Subscribe to topic where sortable messages arrive
         ik_sub_shutdown = rospy.Subscriber('sawyer_ik_solver/change_to_state/shudown', Bool, callback=self.shutdown_callback, queue_size=10)  # Topic where main_gui tells solver to shutdown
@@ -237,12 +239,15 @@ class IKSolver:
             rospy.loginfo("Route to object was successfully executed")
             rospy.sleep(2)  # Sleep to simulate object being picked up
         else:
+            self.sorting_error_pub.publish(data)  # Send object which has failed
+            #  Inform user of failure 
             object_name = data.object_name
             rospy.logwarn("Route Execution Failed: Invalid target object position")
             error_name = "Route Execution Failed (Invalid Position)"
             error_msg = "Object \'%s\' can't be reached" % str(object_name)
             self.ik_solver_error_msg(error_name, error_msg)
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
+            rospy.sleep(4)
             return
 
         self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
@@ -254,12 +259,16 @@ class IKSolver:
             self.sorted_pub.publish(data)
             rospy.sleep(2)
         else:
+            self.sorting_error_pub.publish(data)
+            #  Inform user that container is unreachable
             container_name = data.container_name
             rospy.logwarn("Route Execution Failed: Invalid target container position")
             error_name = "Route Execution Failed (Invalid Position)"
             error_msg = "Container \'%s\' can't be reached" % str(container_name)
             self.ik_solver_error_msg(error_name, error_msg)
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
+            rospy.sleep(4)
+
 
 
 
@@ -267,10 +276,18 @@ class IKSolver:
     def disable_sorting_capability_callback(self, msg):
         self.is_adding_new_item = msg.data
 
+        #  User wants to create object and arm is not in default position
+        if msg.data == True and self.has_returned_home == False: 
+            self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # Move the arm to default, then disable movement 
+            self.has_returned_home = True
+
+        #  Reset the has_returned_home flag once the user is done moving the arm manually
+        if msg.data == False and self.has_returned_home == True:
+            self.has_returned_home = False  
 
 
     ##  This method will send the current arm position to the add_object_pose_node 
-    def send_current_pose(self, msg):
+    def send_current_pose_callback(self, msg):
         self.is_adding_new_item = msg.data
 
         end_point = self.sawyer_arm.endpoint_pose()

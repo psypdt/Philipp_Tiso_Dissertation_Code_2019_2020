@@ -2,7 +2,11 @@
 
 
 import rospy
+from std_msgs.msg import Bool
 from intera_examples.msg import SortableObjectMessage
+
+import threading
+
 import Tkinter as tk
 import ttk
 
@@ -11,8 +15,13 @@ import ttk
 class LiveViewFrame(ttk.Frame):
 
     def __init__(self, parent=None, i_all_containers=None, i_selected_objects=None):
+        self.__item_lock = threading.Lock()  # Lock to make sure no two callbacks manipulate the list at the same time
+
         #  Create Subscribe to topic, cant create node since class runs in main_gui process
         self.sub_sorted = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMessage, callback=self.update_container_status_callback, queue_size=10)  # Topic where sorted object:container pairs get sent to
+        self.sub_sorting_error = rospy.Subscriber('sawyer_ik_solver/sorting/has_failed', SortableObjectMessage, callback=self.handle_failed_sort_callback, queue_size=10)
+        self.completed_sorting_pub = rospy.Publisher('sawyer_ik_sorting/sortable_objects/all/sorted', Bool, queue_size=10)
+
 
         ttk.Frame.__init__(self, parent)
         self.m_active_containers = i_all_containers
@@ -81,15 +90,46 @@ class LiveViewFrame(ttk.Frame):
 
     ##  Callback method that will update the text in the container widgets
     def update_container_status_callback(self, data):
+        self.__item_lock.acquire()  # Get lock for critical section
 
         #  Remove item from list & update the list
-        if len(self.m_selected_objects) >= 1:
+        if len(self.m_selected_objects) >= 1 and data.object_name in self.m_selected_objects:
             self.m_selected_objects.remove(data.object_name)
+
+            self.__item_lock.release()  # End critical
+
             self.obj_selected_var.set(self.m_selected_objects)
             
             if len(self.m_selected_objects) <= 0:
                 self.obj_selected_var.set("All objects have been sorted")
+                is_complete = Bool(data=True)
+                self.completed_sorting_pub.publish(is_complete)
 
             self.container_TreeView.insert("", tk.END,values=(str(data.container_name), str(data.object_name)))
+        else:
+            self.__item_lock.release()  # Release to prevent blocking
         
 
+
+
+    ##  TODO: Make this thread safe
+    ##  Handle cases where an object was not sorted correctly
+    def handle_failed_sort_callback(self, data):
+        self.__item_lock.acquire() # Get lock for critical section
+        print("Got failure")
+
+        if len(self.m_selected_objects) >= 1 and data.object_name in self.m_selected_objects:
+            self.m_selected_objects.remove(data.object_name)
+            
+            self.__item_lock.release()  # End of critical section 
+
+            self.obj_selected_var.set(self.m_selected_objects)
+            
+            if len(self.m_selected_objects) <= 0:
+                self.obj_selected_var.set("All objects have been sorted")
+                is_complete = Bool(data=True)
+                self.completed_sorting_pub.publish(is_complete)
+
+            self.container_TreeView.insert("", tk.END,values=(str(data.container_name), str(data.object_name + ' FAILED')))
+        else:
+            self.__item_lock.release()  # Release lock to prevent blocking

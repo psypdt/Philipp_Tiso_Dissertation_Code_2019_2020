@@ -50,11 +50,14 @@ def generate_xml_from_data(name, obj_type, pose):
        has_type = False
        entry = 'container'
 
-    tag_object = Element(entry, {'name':name})
+    formatted_name = name.lower()  # Make names lower case to eliminate case sensitivity
+
+    tag_object = Element(entry, {'name':formatted_name})
 
     if has_type:
         tag_type = SubElement(tag_object, 'type')
-        tag_type.text = str(obj_type)
+        formatted_type = str(obj_type).lower()  # Format the type to make letter cases irrelevant
+        tag_type.text = formatted_type
 
     #  Generate xml from position data
     generate_xml_from_pos(pose, tag_object)
@@ -132,20 +135,3 @@ def append_to_xml_file(filename=None, name=None, obj_type=None, pose=None):
             root.append(raw_insertion_elem)
             xml_file.write(prettify_xml(root))
 
-
-
-
-
-
-# container_position = Pose()
-# container_position.position.x = 1
-# container_position.position.y = 2
-# container_position.position.z = 3
-# container_position.orientation.x = 4
-# container_position.orientation.y = 5
-# container_position.orientation.z = 6
-# container_position.orientation.w = 7
-
-
-
-# append_to_xml_file(file='testxml.xml', name="Orange Ball", obj_type="Ball", pose=container_position)

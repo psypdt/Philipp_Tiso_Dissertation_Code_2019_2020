@@ -22,6 +22,7 @@ import rospy
 
 import Tkinter as tk
 import tkMessageBox
+import threading  # Use this to display warning async
 
 import intera_interface
 from intera_interface import CHECK_VERSION
@@ -73,7 +74,7 @@ class IKSolver:
         except Exception as ex:
             print(ex)
             error_name = "IK solver crashed!"
-            error_msg = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\nPlese restart the program."
+            error_msg = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\n\nPlese restart the program."
             self.ik_solver_error_msg(error_name, error_msg)  # Display error if robot can't be enabled
             rospy.signal_shutdown("Failed to enable Robot")
 
@@ -245,7 +246,11 @@ class IKSolver:
             rospy.logwarn("Route Execution Failed: Invalid target object position")
             error_name = "Route Execution Failed (Invalid Position)"
             error_msg = "Object \'%s\' can't be reached" % str(object_name)
-            self.ik_solver_error_msg(error_name, error_msg)
+            
+            #  Display error async
+            error_thread = threading.Thread(target=self.ik_solver_error_msg, args=(error_name, error_msg))
+            error_thread.start()
+
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
             rospy.sleep(4)
             return
@@ -265,7 +270,11 @@ class IKSolver:
             rospy.logwarn("Route Execution Failed: Invalid target container position")
             error_name = "Route Execution Failed (Invalid Position)"
             error_msg = "Container \'%s\' can't be reached" % str(container_name)
-            self.ik_solver_error_msg(error_name, error_msg)
+
+            #  Display error async
+            error_thread = threading.Thread(target=self.ik_solver_error_msg, args=(error_name, error_msg))
+            error_thread.start()
+
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
             rospy.sleep(4)
 

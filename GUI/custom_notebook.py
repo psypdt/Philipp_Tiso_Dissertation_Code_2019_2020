@@ -108,7 +108,62 @@ class CustomNotebook(ttk.Notebook):
 
 
 
-    ##  This method will be called when a new element is added]
+    ##  This method will read the xml, get the last element and make it available for instant use
+    def read_new_container(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        suffix = ".xml"
+        filename = "container_positions"
+        
+        full_path = os.path.join(dir_path, filename + suffix)
+
+        try: 
+            with open(full_path, 'rb') as xml_file:
+                tree = ET.parse(xml_file)
+        except Exception as e:
+                print(e)
+                error = "Unable to find file: " + str(filename + str(suffix)) + "\n\nAt: " + str(full_path)
+                self.error_popup_msg("Can't find container file", error)
+                return None
+
+        root = tree.getroot()
+        all_xml_objects = [xml_container for xml_container in tree.findall('container')]
+
+        new_container = all_xml_objects[-1]  # Get the last element from the xml
+        
+
+        #  Construct the container with the relevant attributes
+        container_name = new_container.attrib['name']
+
+        x = new_container.find('./position/x_pos').text
+        y = new_container.find('./position/y_pos').text
+        z = new_container.find('./position/z_pos').text
+
+        container_position = Pose()
+        container_position.position.x = float(x)
+        container_position.position.y = float(y)
+        container_position.position.z = float(z)
+
+        #  If files will be in the deployable structure using oritentation
+        if self.__deploying:
+            ox = new_container.find('./orientation/x_orient').text
+            oy = new_container.find('./orientation/y_orient').text
+            oz = new_container.find('./orientation/z_orient').text
+            ow = new_container.find('./orientation/w_orient').text
+
+            container_position.orientation.x = float(ox)
+            container_position.orientation.y = float(oy)
+            container_position.orientation.z = float(oz)
+            container_position.orientation.w = float(ow)
+        
+        #  Add the container so that we may use it later on
+        self.m_all_containers_dict.update({str(container_name) : container_position})
+
+
+
+
+
+
+    ##  This method will be called when a new element is added
     ##  The method will read the last line in the relevant xml and will update the batch contents appropriatly
     def update_batch_contents(self):
         # Read file and get last entry
@@ -156,7 +211,6 @@ class CustomNotebook(ttk.Notebook):
         self.refresh_tab_objects(obj_type)  # Force tabs to refresh their current state, to show newly added object or batch
         
         
-
 
     ##  This method will refresh the available objects in the tabs
     def refresh_tab_objects(self, modified_batch_name):
@@ -231,6 +285,17 @@ class CustomNotebook(ttk.Notebook):
 
         return sortable
 
+
+
+    ##  This method will itterate through all batches and return every existing object name
+    def get_all_sortable_object_names(self):
+        name_list = []
+
+        for _, batch in CustomNotebook.__sortable_batches.items():
+            batch_items = batch.get_all_object_names()
+            name_list = name_list + batch_items
+        
+        return name_list
 
 
 
@@ -314,7 +379,7 @@ class CustomNotebook(ttk.Notebook):
     def __initialize_custom_style(self):
         style = ttk.Style()
 
-        # Define the images which will be used to display the X
+        # Define the images which will be used to display
         self.images = (
             tk.PhotoImage("img_close", data='''
                 R0lGODlhCAAIAMIBAAAAADs7O4+Pj9nZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
@@ -335,10 +400,12 @@ class CustomNotebook(ttk.Notebook):
         style.element_create("close", "image", "img_close",
                             ("active", "pressed", "!disabled", "img_closepressed"),
                             ("active", "!disabled", "img_closeactive"), border=8, sticky='')
+        
         style.layout("CustomNotebook", [("CustomNotebook.client", {"sticky": "nswe"})])
+        
         style.layout("CustomNotebook.Tab", [
             ("CustomNotebook.tab", {
-                "sticky": "nswe", 
+                "sticky": "nswe",
                 "children": [
                     ("CustomNotebook.padding", {
                         "side": "top", 

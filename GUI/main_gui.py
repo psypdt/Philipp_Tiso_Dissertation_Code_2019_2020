@@ -23,6 +23,7 @@ from live_sorting_progress_view_class import LiveViewFrame
 from create_new_localised_object import ObjectLocationInputBox
 
 import xml.etree.ElementTree as ET
+import threading
 
 import tkMessageBox
 import tkSimpleDialog
@@ -41,6 +42,7 @@ class Application(Frame):
         #  ROS initialization
         rospy.init_node("main_gui_node")
         self.publisher = rospy.Publisher('ui/sortable_object/sorting/execute', SortableObjectMsg, queue_size=10)  # execute sorting task
+        self.completed_sorting_task_sub = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/all/sorted', Bool, callback=self.finished_sorting_callback, queue_size=10)
         
         self.shutdown_ik_pub = rospy.Publisher('sawyer_ik_solver/change_to_state/shudown', Bool, queue_size=10)
 
@@ -51,8 +53,12 @@ class Application(Frame):
 
         rospy.Rate(10)
 
+        self.is_sorting = False  # This flag will be used to stop the user from adding items while the sorting task is executing
+        self.is_creating_container = False  #  This flag will change depending on what type of additon the user is making (object or container)
+
         #  Graphics initialization
         Frame.__init__(self, master)
+        self.master.minsize(830,500)
 
         #  Create Notebook 
         self.notebook = CustomNotebook()
@@ -64,21 +70,33 @@ class Application(Frame):
         self.pack()
         self.createWidgets()
 
-        master.title('SAWYER SORTING TASK UI')
+        master.title('SAWYER SORTING TASK GUI')
 
 
 
     ##  This method will send a SortableObjectMsg to the ik solver
     def send_object_to_sort(self):
+        #  Prevent user from trying to spam the sort button
+        if self.is_sorting == True:
+            return
+
+        self.is_sorting = True  # Set flag to indicate that sorting is in progress
+
         is_add_msg = Bool(data=False)
         self.add_object_pub.publish(is_add_msg)
-
 
         if self.notebook.m_all_open_tabs_dict.values() <= 0:
             error_name = "No Containers!"
             error_msg = "There are no containers! Try adding some with the <Add Container> button"
             self.error_popup_msg(error_name, error_msg)
+            self.is_sorting = False  # Reset flag since sorting failed
             return
+
+        #  Tell user to not approach robot while sorting, do this on seperate thread
+        warning_title = "Sorting in progress!"
+        warning_message = "The robot is now sorting! \n\nDo not approach the robot unless you have stopped the sorting task!"
+        warning_thread = threading.Thread(target=self.show_important_warning_msg, args=(warning_title, warning_message))
+        warning_thread.start()
 
         #  For every tab, get m_selected_objects_dict
         for tab in self.notebook.m_all_open_tabs_dict.values():
@@ -94,27 +112,48 @@ class Application(Frame):
 
 
 
+    ##  Callback to allow user to add containers and objects again, after the sorting task has completed
+    def finished_sorting_callback(self, state):
+        if state.data == True:
+            self.is_sorting = False
+
+
+
     ##  Create widgets which are not specific to tabs
-    ##  TODO: Replace the QUIT button with a RUN button, talks to ik solver
     def createWidgets(self):
-
         style = ttk.Style()  # Create style for buttons
-        style.configure("WR.TButton", foreground="white", background="red", width=20, height=20)
+        style.configure("WR.TButton", foreground="white", background="green", width=20, height=20)
 
-        self.run = ttk.Button(self, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_to_sort())
-        self.run.pack(side='left', ipadx=10, padx=30)
+        #  Pack the start and stop button into one frame
+        self.sorting_command_frame = Frame(self)
 
-        self.locate_object_button = ttk.Button(self, text="Create new object", command=self.add_new_object_pose)
-        self.locate_object_button.pack(side='right', ipadx=10, padx=30)
-        
+        #  Start button
+        self.run = ttk.Button(self.sorting_command_frame, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_to_sort())
+        self.run.pack(side='top', ipadx=10, padx=10)
+
+        self.stop_sorting_button = tk.Button(self.sorting_command_frame, text="STOP SORTING", bg='red', width=18, command=None)
+        self.stop_sorting_button.pack(side='bottom', ipadx=10, padx=30)
+
+        self.sorting_command_frame.pack(side='left', ipadx=10)
+
+
+        #  Add container, use tk. button to do coloring
+        # self.add_container_button = tk.Button(self, bg='#3adee0', text="Add Container", command= lambda: self.create_tab(self.notebook))
         self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.notebook))
-        self.add_container_button.pack(side='right', ipadx=10, padx=30)
+        self.add_container_button.pack(side='left', ipadx=10, padx=20)
+
+
+        #  Create Objects & Containers
+        self.locate_object_button = ttk.Button(self, text="Create new object", command=self.add_new_object_pose)
+        self.locate_object_button.pack(side='right', ipadx=10, padx=20)
+
+        self.create_new_container_button = ttk.Button(self, text="Create new container", command=self.add_new_container_pose)
+        self.create_new_container_button.pack(side='right', ipadx=10, padx=20)
 
 
 
     ##  This method will be used to add tabs to the notebook
     def create_tab(self, note):
-
         tab = note.add_tab(parent_note=note)
 
         if tab != None:
@@ -127,6 +166,10 @@ class Application(Frame):
 
     ##  This method allows users to add a new object position 
     def add_new_object_pose(self):
+        #  User can't add objects while sorting is executing
+        if self.is_sorting:
+            return
+
         is_add_msg = Bool(data=True)
         self.add_object_pub.publish(is_add_msg)
 
@@ -136,6 +179,35 @@ class Application(Frame):
         if prompt == True:
             is_add_msg = Bool(data=True)  # Send this to get the final positon  
             self.add_object_pub.publish(is_add_msg)
+            
+            self.is_creating_container = False  # Reset this flag to false since the user is adding an object
+            
+            is_done_msg = Bool(data=True)
+            self.request_final_pos_pub.publish(is_done_msg)
+
+        else:
+            is_add_msg = Bool(data=False)
+            self.add_object_pub.publish(is_add_msg)
+
+
+
+    ##  This method will tell the IK solver that the user is adding a new position 
+    def add_new_container_pose(self):
+        #  User can't add container while robot is sorting
+        if self.is_sorting:
+            return
+
+        is_add_msg = Bool(data=True)
+        self.add_object_pub.publish(is_add_msg)
+
+        prompt = tkMessageBox.askokcancel('Create New Container', 'Please move the robot arm over a Container you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
+        is_add_msg = Bool(data=False)
+
+        if prompt == True:
+            is_add_msg = Bool(data=True)  # Send this to get the final positon  
+            self.add_object_pub.publish(is_add_msg)
+            
+            self.is_creating_container = True  # Set this flag to True since the user is adding a new container
             
             is_done_msg = Bool(data=True)
             self.request_final_pos_pub.publish(is_done_msg)
@@ -152,7 +224,12 @@ class Application(Frame):
         self.top_lvl_prompt_window = tk.Toplevel(self.master)
         self.top_lvl_prompt_window.title("Create New Object")
         self.top_lvl_prompt_window.minsize(300,80)
-        self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose, self.notebook)
+
+        #  If the user is adding a container choose tehe appropriate input box
+        if self.is_creating_container:
+            self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose, self.notebook, is_object=False)
+        else:
+            self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose, self.notebook)
 
 
 
@@ -171,6 +248,13 @@ class Application(Frame):
         title = "Error: " + str(error_name)
         tkMessageBox.showerror(title, error_msg)
 
+
+
+    ##  This method will display a warning popup
+    def show_important_warning_msg(self, warning_name, warning_msg):
+        title = "Warning: " + str(warning_name)
+        tkMessageBox.showwarning(title, warning_msg)
+
     
 
     ##  This method will shutdown the current and the ik_solver node
@@ -184,7 +268,7 @@ class Application(Frame):
 
 
 root = Tk()  # The window which will contain all components
-root.geometry('750x500')  # Default size of window 
+root.geometry('850x600')  # Default size of window 
 
 app = Application(master=root)
 

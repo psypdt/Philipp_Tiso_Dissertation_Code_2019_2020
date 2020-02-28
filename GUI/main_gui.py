@@ -45,7 +45,6 @@ class Application(Frame):
         self.completed_sorting_task_sub = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/all/sorted', Bool, callback=self.finished_sorting_callback, queue_size=10)
         
         self.shutdown_ik_pub = rospy.Publisher('sawyer_ik_solver/change_to_state/shudown', Bool, queue_size=10)
-
         self.add_object_pub = rospy.Publisher('ui/user/is_moving_arm', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
 
         self.request_final_pos_pub = rospy.Publisher('ui/new_object/state/is_located', Bool, queue_size=10)
@@ -93,10 +92,15 @@ class Application(Frame):
             return
 
         #  Tell user to not approach robot while sorting, do this on seperate thread
-        warning_title = "Sorting in progress!"
-        warning_message = "The robot is now sorting! \n\nDo not approach the robot unless you have stopped the sorting task!"
-        warning_thread = threading.Thread(target=self.show_important_warning_msg, args=(warning_title, warning_message))
-        warning_thread.start()
+        warning_title = "Initiate Sorting!"
+        warning_message = "Press 'OK' to start sorting! \n\nDo not approach the robot unless you have stopped the sorting task!"
+        self.show_important_warning_msg(warning_title, warning_message)
+
+        # Create live view for user
+        self.top_lvl_window = tk.Toplevel(self.master)
+        self.top_lvl_window.title("Live Sorting Progress")
+        self.top_lvl_window.minsize(550,400)
+        self.live_sort_window = LiveViewFrame(self.top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
 
         #  For every tab, get m_selected_objects_dict
         for tab in self.notebook.m_all_open_tabs_dict.values():
@@ -105,10 +109,6 @@ class Application(Frame):
                 msg = item.to_sortableObjectMessage()
                 self.publisher.publish(msg)
                 
-        self.top_lvl_window = tk.Toplevel(self.master)
-        self.top_lvl_window.title("Live Sorting Progress")
-        self.top_lvl_window.minsize(550,400)
-        self.live_sort_window = LiveViewFrame(self.top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
 
 
 
@@ -131,7 +131,8 @@ class Application(Frame):
         self.run = ttk.Button(self.sorting_command_frame, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_to_sort())
         self.run.pack(side='top', ipadx=10, padx=10)
 
-        self.stop_sorting_button = tk.Button(self.sorting_command_frame, text="STOP SORTING", bg='red', width=18, command=None)
+        #  Pressing this button will immediatly halt the sorting 
+        self.stop_sorting_button = tk.Button(self.sorting_command_frame, text="STOP SORTING", bg='red', width=18, command=self.abort_sorting_task)
         self.stop_sorting_button.pack(side='bottom', ipadx=10, padx=30)
 
         self.sorting_command_frame.pack(side='left', ipadx=10)
@@ -241,6 +242,14 @@ class Application(Frame):
             for item in container.m_selected_objects_dict.keys():
                 selected_obj_list.append(item)
         return selected_obj_list
+
+
+
+    ##  This method is called when the sorting task must be halted immediatly
+    def abort_sorting_task(self):
+        pass
+
+
 
 
     ##  This method will create a popup if some error occures

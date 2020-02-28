@@ -22,7 +22,6 @@ import rospy
 
 import Tkinter as tk
 import tkMessageBox
-import threading  # Use this to display warning async
 
 import intera_interface
 from intera_interface import CHECK_VERSION
@@ -61,7 +60,7 @@ class IKSolver:
         self.arm_speed = 0.28
         self.arm_timeout = 5
 
-        self.ik_sub
+        self.ik_sub_abort_sorting = rospy.Subscriber('ui/user/has_aborted', Bool, callback=None, queue_size=10)  # This will suspend all sorting 
 
         self.ik_sub_add_item = rospy.Subscriber('ui/user/is_moving_arm', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
         self.ik_pub_current_arm_pose = rospy.Publisher('sawyer_ik_sorting/sawyer_arm/pose/current', Pose, queue_size=10)  # Publish current arm pose
@@ -247,11 +246,10 @@ class IKSolver:
             object_name = data.object_name
             rospy.logwarn("Route Execution Failed: Invalid target object position")
             error_name = "Route Execution Failed (Invalid Position)"
-            error_msg = "Object \'%s\' can't be reached" % str(object_name)
+            error_msg = "Object \'%s\' can't be reached\n\nPess 'OK' to continue sorting." % str(object_name)
             
-            #  Display error async
-            error_thread = threading.Thread(target=self.ik_solver_error_msg, args=(error_name, error_msg))
-            error_thread.start()
+            #  Display error 
+            self.ik_solver_error_msg(error_name, error_msg)
 
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
             rospy.sleep(4)
@@ -271,11 +269,10 @@ class IKSolver:
             container_name = data.container_name
             rospy.logwarn("Route Execution Failed: Invalid target container position")
             error_name = "Route Execution Failed (Invalid Position)"
-            error_msg = "Container \'%s\' can't be reached" % str(container_name)
+            error_msg = "Container \'%s\' can't be reached\n\nPress 'OK' to continue sorting" % str(container_name)
 
-            #  Display error async
-            error_thread = threading.Thread(target=self.ik_solver_error_msg, args=(error_name, error_msg))
-            error_thread.start()
+            #  Display error 
+            self.ik_solver_error_msg(error_name, error_msg)
 
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
             rospy.sleep(4)

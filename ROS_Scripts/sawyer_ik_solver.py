@@ -83,7 +83,7 @@ class IKSolver:
         self.ik_pub_sorted = rospy.Publisher('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
         self.ik_pub_sorting_error = rospy.Publisher('sawyer_ik_solver/sorting/has_failed', SortableObjectMsg, queue_size=10)  # This will publish the object & container pair which has failed
 
-        ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=10)  # Subscribe to topic where sortable messages arrive
+        ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=4)  # Subscribe to topic where sortable messages arrive
         ik_sub_shutdown = rospy.Subscriber('sawyer_ik_solver/change_to_state/shudown', Bool, callback=self.shutdown_callback, queue_size=10)  # Topic where main_gui tells solver to shutdown
 
         #  Move to default position when the ik solver is initially launched

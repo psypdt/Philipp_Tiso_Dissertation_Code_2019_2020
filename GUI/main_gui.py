@@ -42,9 +42,10 @@ class Application(Frame):
         #  ROS initialization
         self.__to_sort_list_lock = threading.Lock()
         self.objects_to_send_list=[]  # A list containing all objects wich must be send to the ik solver
+        self.__is_abort = False
  
         rospy.init_node("main_gui_node")
-        self.gui_pub_sort_execute_item = rospy.Publisher('ui/sortable_object/sorting/execute', SortableObjectMsg, queue_size=10)  # execute sorting task
+        self.gui_pub_sort_execute_item = rospy.Publisher('ui/sortable_object/sorting/execute', SortableObjectMsg, queue_size=4)  # execute sorting task
         self.gui_sub_completed_item = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, callback=self.send_next_item_callback, queue_size=10)  # Listen to this topic to know when an item was sorted so we can send the next one
         self.gui_sub_failed_item = rospy.Subscriber('sawyer_ik_solver/sorting/has_failed', SortableObjectMsg, callback=self.send_item_after_failure_callback, queue_size=10)  # Listen for failed items, if one is detected then send the next item
 
@@ -122,6 +123,9 @@ class Application(Frame):
         if self.is_sorting == True:
             return
 
+        if self.__is_abort == True:
+            self.__is_abort = False  # Reset flag so we can sort again
+
         self.is_sorting = True  # Set flag to indicate that sorting is in progress
 
         is_add_msg = Bool(data=False)
@@ -157,6 +161,7 @@ class Application(Frame):
         if len(self.objects_to_send_list) > 0:
             first_msg = self.objects_to_send_list.pop()
             self.gui_pub_sort_execute_item.publish(first_msg)
+            print("Sent first")
         else:  # There is nothing to sort
             self.is_sorting = False  # Reset flag since there is nothing to sort
                 
@@ -166,7 +171,7 @@ class Application(Frame):
     ##  This method is a callback that will be used to send a new sortable object once the ik solver has completed sorting a single object
     def send_next_item_callback(self, data):
         #  Make sure that the sorting task is still active (hasn't been stopped by user)
-        if self.is_sorting:
+        if self.is_sorting and not self.__is_abort:
 
             self.__to_sort_list_lock.acquire()  # Enter critical section
 
@@ -175,13 +180,14 @@ class Application(Frame):
                 self.__to_sort_list_lock.release()  # End of critical section
 
                 self.gui_pub_sort_execute_item.publish(next_message)
+                print("Sent Next")
 
 
     
     ##  This callback is invoked if an object was not sorted, to prevent blocking we call this to send the next item
     def send_item_after_failure_callback(self, data):
         #  Make sure we are in sorting mode
-        if self.is_sorting:
+        if self.is_sorting and not self.__is_abort:
         
             self.__to_sort_list_lock.acquire()  # Entering critical section
             
@@ -198,6 +204,8 @@ class Application(Frame):
     def finished_sorting_callback(self, state):
         if state.data == True:
             self.is_sorting = False
+
+            print("All Done")
 
 
 
@@ -300,6 +308,7 @@ class Application(Frame):
             return
         
         self.is_sorting = False  # Set this to false to stop sending more objects
+        self.__is_abort = True  # Sorting was aborted
         
         #  Need thread safe way to remove all items from queue
         self.__to_sort_list_lock.acquire()
@@ -308,6 +317,7 @@ class Application(Frame):
 
         state = Bool(data=True)
         self.gui_pub_abort_sorting.publish(state)  # Notify live view that task has been aborted
+        print("Sent abort")
         
         
 

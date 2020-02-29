@@ -40,8 +40,14 @@ class Application(Frame):
 
     def __init__(self, master=None):
         #  ROS initialization
+        self.__to_sort_list_lock = threading.Lock()
+        self.objects_to_send_list=[]  # A list containing all objects wich must be send to the ik solver
+ 
         rospy.init_node("main_gui_node")
-        self.publisher = rospy.Publisher('ui/sortable_object/sorting/execute', SortableObjectMsg, queue_size=10)  # execute sorting task
+        self.gui_pub_sort_execute_item = rospy.Publisher('ui/sortable_object/sorting/execute', SortableObjectMsg, queue_size=10)  # execute sorting task
+        self.gui_sub_completed_item = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, callback=self.send_next_item_callback, queue_size=10)  # Listen to this topic to know when an item was sorted so we can send the next one
+        self.gui_sub_failed_item = rospy.Subscriber('sawyer_ik_solver/sorting/has_failed', SortableObjectMsg, callback=self.send_item_after_failure_callback, queue_size=10)  # Listen for failed items, if one is detected then send the next item
+
         self.completed_sorting_task_sub = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/all/sorted', Bool, callback=self.finished_sorting_callback, queue_size=10)
         
         self.shutdown_ik_pub = rospy.Publisher('sawyer_ik_solver/change_to_state/shudown', Bool, queue_size=10)
@@ -70,6 +76,42 @@ class Application(Frame):
         self.createWidgets()
 
         master.title('SAWYER SORTING TASK GUI')
+
+
+
+
+    ##  Create widgets which are not specific to tabs
+    def createWidgets(self):
+        style = ttk.Style()  # Create style for buttons
+        style.configure("WR.TButton", foreground="white", background="green", width=20, height=20)
+
+        #  Pack the start and stop button into one frame
+        self.sorting_command_frame = Frame(self)
+
+        #  Start button
+        self.run = ttk.Button(self.sorting_command_frame, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_to_sort())
+        self.run.pack(side='top', ipadx=10, padx=10)
+
+        #  Pressing this button will immediatly halt the sorting 
+        self.stop_sorting_button = tk.Button(self.sorting_command_frame, text="STOP SORTING", bg='red', width=18, command=self.abort_sorting_task)
+        self.stop_sorting_button.pack(side='bottom', ipadx=10, padx=30)
+
+        self.sorting_command_frame.pack(side='left', ipadx=10)
+
+
+        #  Add container, use tk. button to do coloring
+        # self.add_container_button = tk.Button(self, bg='#3adee0', text="Add Container", command= lambda: self.create_tab(self.notebook))
+        self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.notebook))
+        self.add_container_button.pack(side='left', ipadx=10, padx=20)
+
+
+        #  Create Objects & Containers
+        self.locate_object_button = ttk.Button(self, text="Create new object", command=self.add_new_object_pose)
+        self.locate_object_button.pack(side='right', ipadx=10, padx=20)
+
+        self.create_new_container_button = ttk.Button(self, text="Create new container", command=self.add_new_container_pose)
+        self.create_new_container_button.pack(side='right', ipadx=10, padx=20)
+
 
 
 
@@ -107,8 +149,44 @@ class Application(Frame):
 
             for item in tab.m_selected_objects_dict.values():  # Get all selected SortableObjects
                 msg = item.to_sortableObjectMessage()
-                self.publisher.publish(msg)
+                self.objects_to_send_list.append(msg)
+        
+        #  Send the first item to the ik solver
+        if len(self.objects_to_send_list) > 0:
+            first_msg = self.objects_to_send_list.pop()
+            self.gui_pub_sort_execute_item.publish(first_msg)
                 
+
+
+
+    ##  This method is a callback that will be used to send a new sortable object once the ik solver has completed sorting a single object
+    def send_next_item_callback(self, data):
+        #  Make sure that the sorting task is still active (hasn't been stopped by user)
+        if self.is_sorting:
+
+            self.__to_sort_list_lock.acquire()  # Enter critical section
+
+            if len(self.objects_to_send_list) > 0:
+                next_message = self.objects_to_send_list.pop()
+                self.__to_sort_list_lock.release()  # End of critical section
+
+                self.gui_pub_sort_execute_item.publish(next_message)
+
+
+    
+    ##  This callback is invoked if an object was not sorted, to prevent blocking we call this to send the next item
+    def send_item_after_failure_callback(self, data):
+        #  Make sure we are in sorting mode
+        if self.is_sorting:
+        
+            self.__to_sort_list_lock.acquire()  # Entering critical section
+            
+            if len(self.objects_to_send_list) > 0:
+                next_message = self.objects_to_send_list.pop()
+                self.__to_sort_list_lock.release()  # Exit critical section
+
+                self.gui_pub_sort_execute_item.publish(next_message)
+
 
 
 
@@ -117,39 +195,6 @@ class Application(Frame):
         if state.data == True:
             self.is_sorting = False
 
-
-
-    ##  Create widgets which are not specific to tabs
-    def createWidgets(self):
-        style = ttk.Style()  # Create style for buttons
-        style.configure("WR.TButton", foreground="white", background="green", width=20, height=20)
-
-        #  Pack the start and stop button into one frame
-        self.sorting_command_frame = Frame(self)
-
-        #  Start button
-        self.run = ttk.Button(self.sorting_command_frame, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_to_sort())
-        self.run.pack(side='top', ipadx=10, padx=10)
-
-        #  Pressing this button will immediatly halt the sorting 
-        self.stop_sorting_button = tk.Button(self.sorting_command_frame, text="STOP SORTING", bg='red', width=18, command=self.abort_sorting_task)
-        self.stop_sorting_button.pack(side='bottom', ipadx=10, padx=30)
-
-        self.sorting_command_frame.pack(side='left', ipadx=10)
-
-
-        #  Add container, use tk. button to do coloring
-        # self.add_container_button = tk.Button(self, bg='#3adee0', text="Add Container", command= lambda: self.create_tab(self.notebook))
-        self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.notebook))
-        self.add_container_button.pack(side='left', ipadx=10, padx=20)
-
-
-        #  Create Objects & Containers
-        self.locate_object_button = ttk.Button(self, text="Create new object", command=self.add_new_object_pose)
-        self.locate_object_button.pack(side='right', ipadx=10, padx=20)
-
-        self.create_new_container_button = ttk.Button(self, text="Create new container", command=self.add_new_container_pose)
-        self.create_new_container_button.pack(side='right', ipadx=10, padx=20)
 
 
 
@@ -247,7 +292,15 @@ class Application(Frame):
 
     ##  This method is called when the sorting task must be halted immediatly
     def abort_sorting_task(self):
-        pass
+        self.is_sorting = False  # Set this to false to stop sending more objects
+        
+        #  Need thread safe way to remove all items from queue
+        self.__to_sort_list_lock.acquire()
+        del self.objects_to_send_list[:]  # Clear the list so that there is nothing left to sort
+        self.__to_sort_list_lock.release()
+        
+        print(self.objects_to_send_list)
+
 
 
 

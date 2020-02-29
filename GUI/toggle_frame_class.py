@@ -20,21 +20,26 @@ class ToggledBatchFrame(tk.Frame):
         self.title_frame.pack(fill="x", expand=1)
 
         #  Setup title of collection, fills entire frame
-        self.batch_text = str(collection_name)
-        ttk.Label(self.title_frame, text=self.batch_text).pack(side="left", fill="x", expand=1)
+        self.batch_text = str(collection_name).lower()
+        self.batch_text = self.batch_text.capitalize()
+        
+        # ttk.Label(self.title_frame, text=self.batch_text).pack(side="left", fill="x", expand=1)
 
         #  Create button which will toggle the view
-        self.toggle_button = ttk.Checkbutton(self.title_frame, width=2, text='+', command=self.toggle_state, variable=self.show, style='Toolbutton')
-        self.toggle_button.pack(side="left")
+        self.toggle_button = ttk.Checkbutton(self.title_frame, text=str(self.batch_text + ' ^'), command=self.toggle_state, variable=self.show, style='Toolbutton')
+        self.toggle_button.pack(side="left", expand=1, fill='x', anchor='w')
+        
 
+        #  Where all the sub elements will be sorted
         self.sub_frame = tk.Frame(self, relief="sunken", borderwidth=1)
+        self.sub_frame.forget()  # subframe is initially colapsed, use pack() to have it expanded by default 
 
 
     ##  This method will display the contents of the current toggle frame
     def toggle_state(self):
         if bool(self.show.get()):
             self.sub_frame.pack(fill="x", expand=1)
-            self.toggle_button.configure(text='-')
+            self.toggle_button.configure(text=str(self.batch_text + ' ^'))
         else:
             self.sub_frame.forget()
-            self.toggle_button.configure(text='+')
+            self.toggle_button.configure(text=str(self.batch_text + ' +'))

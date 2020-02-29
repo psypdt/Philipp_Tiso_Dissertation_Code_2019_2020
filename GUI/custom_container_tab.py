@@ -174,7 +174,7 @@ class RosContainerTab(ttk.Frame):
         self.toggled_frame.update_idletasks()  # Refresh all the items in the frame for toggled items
         self.toggle_canvas.config(scrollregion=self.toggle_canvas.bbox('all'))  # Reconfigure region
         self.toggle_canvas.yview('moveto', '1.0')  # Move scroll to top
-        self.toggle_canvas.xview('moveto', '1.0')  # Move to left most side
+        self.toggle_canvas.xview('moveto', '0.0')  # Move to left most side
 
 
 

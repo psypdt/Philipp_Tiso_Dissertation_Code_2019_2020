@@ -56,11 +56,11 @@ class RosContainerTab(ttk.Frame):
 
     ##  This method will display some information about the container
     def setup_container_info(self):
-        self.selection_label_var = StringVar()  # Use this so it can be modified later
-        self.selection_label_var.set(self.get_selected_object_str())  # Set to all selected items
+        # self.selection_label_var = StringVar()  # Use this so it can be modified later
+        # self.selection_label_var.set(self.get_selected_object_str())  # Set to all selected items
 
         title_text = "Objects Select for container %s:" % self.m_container_name
-        self.selected_objects_title_label = tk.Label(self, text=title_text, font=("Helvetica", 12)).grid(row=1, column=2)
+        self.selected_objects_title_label = tk.Label(self, text=title_text, font=("Helvetica", 12, 'bold')).grid(row=1, column=2)
         # self.selected_objects_label = tk.Label(self, textvariable=self.selection_label_var).grid(row=2, column=2, rowspan=3, columnspan=2, sticky="w")
         self.textbox_frame = tk.Frame(self)
         self.textbox_frame.grid(row=2, column=2, rowspan=3, columnspan=2, sticky="w")
@@ -75,8 +75,8 @@ class RosContainerTab(ttk.Frame):
         self.vertical_textbox_scroll = Scrollbar(self.textbox_frame, orient="vertical")
         self.vertical_textbox_scroll.pack(side="right", fill="y")
 
-        #  Create textbox 
-        self.selected_objects_textbox = Text(self.textbox_frame, wrap="none", width=25, height=20,
+        #  Create textbox for user to see selected objects
+        self.selected_objects_textbox = Text(self.textbox_frame, wrap="none", width=25, height=20, font=("Helvetica", 8, 'bold'),
                                                 yscrollcommand=self.vertical_textbox_scroll.set, xscrollcommand=self.horizontal_textbox_scroll.set)
         self.selected_objects_textbox.config(state="disabled")
         self.selected_objects_textbox.pack(side="left", fill="y")
@@ -105,10 +105,16 @@ class RosContainerTab(ttk.Frame):
     ##  Return string of all selected objects
     def get_selected_object_str(self):
         final_str = ""
+        item_list = []
 
         if len(self.m_selected_objects_dict) > 0:
+            #  Get all items
             for key, _ in self.m_selected_objects_dict.iteritems():
-                final_str += str(key) + "\n\n"
+                item_list.append(str(key).capitalize())
+            item_list.sort()
+
+            for obj in item_list:
+                final_str += obj + "\n\n"
         
         return final_str
 
@@ -117,33 +123,40 @@ class RosContainerTab(ttk.Frame):
 
     ##  This method sets up a scrollable frame for the batch items
     def setup_scrollable_toggle(self):
-        label = Label(self, text="Sortable Object Batches:", font=("Helvetica", 12)).grid(row=1, column=8)
+        label = Label(self, text="Sortable Object Batches:", font=("Helvetica", 12, 'bold')).grid(row=1, column=8)
         # description = Label(self, text="A batch is a collection of objects.\nSelect a batch to add objects to the current container").grid(row=8, column=7)
 
         #  Create Frame where all subitems will be contained
         self.top_toggle_frame = tk.Frame(self)
-        # self.top_toggle_frame.grid(row=3, column=8, rowspan=2, sticky='ne')
-        self.top_toggle_frame.grid(row=3, column=8, pady=(3,0), rowspan=2, sticky='ne')
+        self.top_toggle_frame.grid(row=3, column=8, rowspan=3, columnspan=2, sticky='e')
+        # self.top_toggle_frame.grid(row=2, column=8, pady=(3,0), rowspan=3, sticky='ne')
         self.top_toggle_frame.grid_rowconfigure(0, weight=1)
         self.top_toggle_frame.grid_columnconfigure(0, weight=1)
         self.top_toggle_frame.propagate(False)
     
 
         #  Create Canvas for Scrollbar and frame housing all items
-        self.toggle_canvas = tk.Canvas(self.top_toggle_frame)
-        self.toggle_canvas.grid(row=0, column=0, sticky='news')
+        self.toggle_canvas = tk.Canvas(self)
+        # self.toggle_canvas.grid(row=0, column=0, sticky='news')
+        self.toggle_canvas.grid(row=2, column=8, rowspan=2, sticky='news')
         
-
-        #  Create Vertical scollbar
-        self.vscrollbar = tk.Scrollbar(self.top_toggle_frame, orient='vertical', command=self.toggle_canvas.yview)
-        self.vscrollbar.grid(row=0, column=3, sticky="nsw")
-        self.toggle_canvas.configure(yscrollcommand=self.vscrollbar.set)
 
         #  Create Frame for ToggledBatchFrame objects
-        self.toggled_frame = Frame(self.toggle_canvas)
-        self.toggle_canvas.create_window((0,0), window=self.toggled_frame, anchor='ne')
+        self.toggled_frame = Frame(self.toggle_canvas, width=20, height=25)
+        self.toggle_canvas.create_window((0,0), window=self.toggled_frame, anchor='nw')
         # self.toggled_frame.grid(row=0, column=2)  # Removing this fixes the frame size, but causes expaned selection to overflow onto the left side
         
+        #  Create scroll bars
+        self.x_scroll_toggled_canvas = Scrollbar(self.toggle_canvas, orient="horizontal")
+        self.y_scroll_toggled_canvas = Scrollbar(self.toggle_canvas, orient="vertical")
+
+        self.x_scroll_toggled_canvas.config(command=self.toggle_canvas.xview)
+        self.y_scroll_toggled_canvas.config(command=self.toggle_canvas.yview)
+
+        self.x_scroll_toggled_canvas.pack(side="bottom", fill="x")
+        self.y_scroll_toggled_canvas.pack(side="right", fill="y")
+
+
 
          #  Add 9-by-1 CheckButtons to the frame
         rows = len(RosContainerTab.__container_batches)  # Get all batches that were parsed out in the xml
@@ -162,14 +175,14 @@ class RosContainerTab(ttk.Frame):
 
         #  Resize the canvas frame to show exactly 1-by-5 Toggles and the scrollbar
         #  Maybe try getting the subelement length and adjust depending on that?
-        try:
-            first5columns_width = max([self.toggle_widgets[j].winfo_width() for j in range(0, rows_to_show)])  # Find the widest element and set the minimum size to that
-            first5rows_height = sum([self.toggle_widgets[i].winfo_height() for i in range(0, rows_to_show)])  #  Sum the height of all elements and set the size to that + the scrollbar
+        # try:
+        #     # first5columns_width = max([self.toggle_widgets[j].winfo_width() for j in range(0, rows_to_show)])  # Find the widest element and set the minimum size to that
+        #     first5rows_height = sum([self.toggle_widgets[i].winfo_height() for i in range(0, rows_to_show)])  #  Sum the height of all elements and set the size to that + the scrollbar
             
-            self.top_toggle_frame.config(width=first5columns_width + self.vscrollbar.winfo_width(), height=first5rows_height)
-            self.toggle_canvas.config(scrollregion=self.toggle_canvas.bbox("all"))  # Set the scroll region
-        except ValueError as e:
-            print(e)
+        #     # self.top_toggle_frame.config(width=first5columns_width + self.vscrollbar.winfo_width(), height=first5rows_height)
+        #     self.toggle_canvas.config(scrollregion=self.toggle_canvas.bbox("all"))  # Set the scroll region
+        # except ValueError as e:
+        #     print(e)
 
 
     ##  This method will create the batch frames 

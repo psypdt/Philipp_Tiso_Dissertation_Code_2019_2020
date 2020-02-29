@@ -21,6 +21,7 @@ class LiveViewFrame(ttk.Frame):
         self.sub_sorted = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMessage, callback=self.update_container_status_callback, queue_size=10)  # Topic where sorted object:container pairs get sent to
         self.sub_sorting_error = rospy.Subscriber('sawyer_ik_solver/sorting/has_failed', SortableObjectMessage, callback=self.handle_failed_sort_callback, queue_size=10)
         self.completed_sorting_pub = rospy.Publisher('sawyer_ik_sorting/sortable_objects/all/sorted', Bool, queue_size=10)
+        self.sub_task_aborted = rospy.Subscriber('gui/user/has_aborted', Bool, callback=self.handle_aborted_sorting_callback, queue_size=10)  # GUI will notify subscribers if user has stopped sorting task
 
 
         ttk.Frame.__init__(self, parent)
@@ -70,6 +71,7 @@ class LiveViewFrame(ttk.Frame):
 
         #  Define some highliting for identifying failed sorts
         self.container_TreeView.tag_configure('failed_sort', background='red')  # Anything with this tag will be highlited in red
+        self.container_TreeView.tag_configure('aborted_sort', background='orange')
 
         #  Create horizontal scrollbar
         treeXscroll = ttk.Scrollbar(self.canvas, orient="horizontal")
@@ -126,7 +128,7 @@ class LiveViewFrame(ttk.Frame):
             
             self.__item_lock.release()  # End of critical section 
 
-            self.obj_selected_var.set(self.m_selected_objects)
+            self.obj_selected_var.set(self.m_selected_objects)  # Set the label string for the objects which have not been sorted
             
             if len(self.m_selected_objects) <= 0:
                 self.obj_selected_var.set("All objects have been sorted")
@@ -136,3 +138,23 @@ class LiveViewFrame(ttk.Frame):
             self.container_TreeView.insert("", tk.END, values=(str(data.container_name).capitalize(), str(data.object_name).capitalize(), "FAILED"), tags=('failed_sort',))
         else:
             self.__item_lock.release()  # Release lock to prevent blocking
+
+
+
+    
+    ##  This callback is invoked if the user has canceled the entire sorting task
+    def handle_aborted_sorting_callback(self, state):
+        if state.data == False:
+            return
+
+        self.__item_lock.acquire()
+
+        #  While items can be consumed
+        while len(self.m_selected_objects) >= 1:
+            item = self.m_selected_objects.pop()
+
+            self.container_TreeView.insert("", tk.END, values=(str("None"), str(item).capitalize(), "ABORTED"), tags=('aborted_sort'))
+        
+        self.__item_lock.release()  # End of critical section
+
+        self.obj_selected_var.set(self.m_selected_objects)

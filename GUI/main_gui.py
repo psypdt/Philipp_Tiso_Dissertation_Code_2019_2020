@@ -49,6 +49,7 @@ class Application(Frame):
         self.gui_sub_failed_item = rospy.Subscriber('sawyer_ik_solver/sorting/has_failed', SortableObjectMsg, callback=self.send_item_after_failure_callback, queue_size=10)  # Listen for failed items, if one is detected then send the next item
 
         self.completed_sorting_task_sub = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/all/sorted', Bool, callback=self.finished_sorting_callback, queue_size=10)
+        self.gui_pub_abort_sorting = rospy.Publisher('gui/user/has_aborted', Bool, queue_size=10)
         
         self.shutdown_ik_pub = rospy.Publisher('sawyer_ik_solver/change_to_state/shudown', Bool, queue_size=10)
         self.add_object_pub = rospy.Publisher('ui/user/is_moving_arm', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
@@ -298,10 +299,11 @@ class Application(Frame):
         self.__to_sort_list_lock.acquire()
         del self.objects_to_send_list[:]  # Clear the list so that there is nothing left to sort
         self.__to_sort_list_lock.release()
+
+        state = Bool(data=True)
+        self.gui_pub_abort_sorting.publish(state)  # Notify live view that task has been aborted
         
-        print(self.objects_to_send_list)
-
-
+        
 
 
 

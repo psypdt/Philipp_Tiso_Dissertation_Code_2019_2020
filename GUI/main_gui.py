@@ -90,7 +90,7 @@ class Application(Frame):
         self.sorting_command_frame = Frame(self)
 
         #  Start button
-        self.run = ttk.Button(self.sorting_command_frame, text="RUN SORTING TASK", style="WR.TButton", command= lambda: self.send_object_to_sort())
+        self.run = ttk.Button(self.sorting_command_frame, text="RUN SORTING TASK", style="WR.TButton", command=self.send_object_to_sort)
         self.run.pack(side='top', ipadx=10, padx=10)
 
         #  Pressing this button will immediatly halt the sorting 
@@ -125,13 +125,14 @@ class Application(Frame):
         self.is_sorting = True  # Set flag to indicate that sorting is in progress
 
         is_add_msg = Bool(data=False)
-        self.add_object_pub.publish(is_add_msg)
+        self.add_object_pub.publish(is_add_msg)  #  Tell IK solver that it's allowed to move the arm
 
         if self.notebook.m_all_open_tabs_dict.values() <= 0:
+            self.is_sorting = False  # Reset flag since sorting failed
+
             error_name = "No Containers!"
             error_msg = "There are no containers! Try adding some with the <Add Container> button"
             self.error_popup_msg(error_name, error_msg)
-            self.is_sorting = False  # Reset flag since sorting failed
             return
 
         #  Tell user to not approach robot while sorting, do this on seperate thread
@@ -156,6 +157,8 @@ class Application(Frame):
         if len(self.objects_to_send_list) > 0:
             first_msg = self.objects_to_send_list.pop()
             self.gui_pub_sort_execute_item.publish(first_msg)
+        else:  # There is nothing to sort
+            self.is_sorting = False  # Reset flag since there is nothing to sort
                 
 
 
@@ -293,6 +296,9 @@ class Application(Frame):
 
     ##  This method is called when the sorting task must be halted immediatly
     def abort_sorting_task(self):
+        if self.is_sorting == False:
+            return
+        
         self.is_sorting = False  # Set this to false to stop sending more objects
         
         #  Need thread safe way to remove all items from queue

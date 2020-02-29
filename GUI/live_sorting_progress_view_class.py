@@ -9,6 +9,7 @@ import threading
 
 import Tkinter as tk
 import ttk
+import tkMessageBox
 
 
 
@@ -69,7 +70,10 @@ class LiveViewFrame(ttk.Frame):
         self.container_TreeView.heading("Item", text="Item")
         self.container_TreeView.heading("Status", text="Status")  # Did the sorting fail or succeed 
 
-        #  Define some highliting for identifying failed sorts
+        #  Define highlighting for successful sorts
+        self.container_TreeView.tag_configure('successful_sort', background='green', foreground='white')
+
+        #  Define some highliting for identifying failed & aborted sorts
         self.container_TreeView.tag_configure('failed_sort', background='red')  # Anything with this tag will be highlited in red
         self.container_TreeView.tag_configure('aborted_sort', background='orange')
 
@@ -112,7 +116,7 @@ class LiveViewFrame(ttk.Frame):
                 is_complete = Bool(data=True)
                 self.completed_sorting_pub.publish(is_complete)
 
-            self.container_TreeView.insert("", tk.END, values=(str(data.container_name).capitalize(), str(data.object_name).capitalize(), "SORTED"))
+            self.container_TreeView.insert("", tk.END, values=(str(data.container_name).capitalize(), str(data.object_name).capitalize(), "SORTED"), tags=('successful_sort',))
         else:
             self.__item_lock.release()  # Release to prevent blocking
         
@@ -156,5 +160,12 @@ class LiveViewFrame(ttk.Frame):
             self.container_TreeView.insert("", tk.END, values=(str("None"), str(item).capitalize(), "ABORTED"), tags=('aborted_sort'))
         
         self.__item_lock.release()  # End of critical section
+        self.obj_selected_var.set(self.m_selected_objects)  # Update the label containing current items to sort
 
-        self.obj_selected_var.set(self.m_selected_objects)
+        #  Notify main_gui that task is complete
+        is_complete = Bool(data=True)
+        self.completed_sorting_pub.publish(is_complete)
+
+        # tkMessageBox.showwarning("Halting Task!", "Halting Robot.\n\nItems may still be enqueued! \n\nStay clear of the robot for atleast 20 seconds.")
+
+

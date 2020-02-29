@@ -124,16 +124,7 @@ class RosContainerTab(ttk.Frame):
     ##  This method sets up a scrollable frame for the batch items
     def setup_scrollable_toggle(self):
         label = Label(self, text="Sortable Object Batches:", font=("Helvetica", 12, 'bold')).grid(row=1, column=8)
-        # description = Label(self, text="A batch is a collection of objects.\nSelect a batch to add objects to the current container").grid(row=8, column=7)
-
-        #  Create Frame where all subitems will be contained
-        # self.top_toggle_frame = tk.Frame(self)
-        # self.top_toggle_frame.grid(row=3, column=8, rowspan=3, columnspan=2, sticky='e')
-        # # self.top_toggle_frame.grid(row=2, column=8, pady=(3,0), rowspan=3, sticky='ne')
-        # self.top_toggle_frame.grid_rowconfigure(0, weight=1)
-        # self.top_toggle_frame.grid_columnconfigure(0, weight=1)
-        # self.top_toggle_frame.propagate(False)
-
+        
         #  Create Canvas for Scrollbar and frame housing all items
         self.toggle_canvas = Canvas(self, width=20, height=25)
         self.toggle_canvas.grid(row=2, column=8, rowspan=4, sticky='news')
@@ -173,6 +164,17 @@ class RosContainerTab(ttk.Frame):
         self.toggle_canvas.config(xscrollcommand=self.x_scroll_toggled_canvas.set, yscrollcommand=self.y_scroll_toggled_canvas.set)
         self.x_scroll_toggled_canvas.config(command=self.toggle_canvas.xview)
         self.y_scroll_toggled_canvas.config(command=self.toggle_canvas.yview)
+
+
+
+
+
+    ##  Use to update the canvas scrollbars when a new item is added
+    def update_canvas_scroll(self):
+        self.toggled_frame.update_idletasks()  # Refresh all the items in the frame for toggled items
+        self.toggle_canvas.config(scrollregion=self.toggle_canvas.bbox('all'))  # Reconfigure region
+        self.toggle_canvas.yview('moveto', '1.0')  # Move scroll to top
+        self.toggle_canvas.xview('moveto', '1.0')  # Move to left most side
 
 
 
@@ -242,6 +244,7 @@ class RosContainerTab(ttk.Frame):
             self.m_object_checkbox_name_state_dict.update({obj_name : obj_val})
             self.m_object_batch_relation_dict.update({obj_name : batch_key})
 
+
         
     ##  This method will handle the event when an object is selected, it will handle all adding and removing from the selected_objects dictionarie for selected sortable_items
     def update_selected_toggled_objects_state(self, event):
@@ -291,6 +294,8 @@ class RosContainerTab(ttk.Frame):
             
             self.create_toggle_subelements(modified_batch_name, self.toggle_widgets[x])
             self.m_batchKey_toggle_frame_dict.update({modified_batch_name : self.toggle_widgets[x]})
+
+        self.update_canvas_scroll()  # Update scrollbars
 
 
 

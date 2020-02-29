@@ -127,22 +127,20 @@ class RosContainerTab(ttk.Frame):
         # description = Label(self, text="A batch is a collection of objects.\nSelect a batch to add objects to the current container").grid(row=8, column=7)
 
         #  Create Frame where all subitems will be contained
-        self.top_toggle_frame = tk.Frame(self)
-        self.top_toggle_frame.grid(row=3, column=8, rowspan=3, columnspan=2, sticky='e')
-        # self.top_toggle_frame.grid(row=2, column=8, pady=(3,0), rowspan=3, sticky='ne')
-        self.top_toggle_frame.grid_rowconfigure(0, weight=1)
-        self.top_toggle_frame.grid_columnconfigure(0, weight=1)
-        self.top_toggle_frame.propagate(False)
-    
+        # self.top_toggle_frame = tk.Frame(self)
+        # self.top_toggle_frame.grid(row=3, column=8, rowspan=3, columnspan=2, sticky='e')
+        # # self.top_toggle_frame.grid(row=2, column=8, pady=(3,0), rowspan=3, sticky='ne')
+        # self.top_toggle_frame.grid_rowconfigure(0, weight=1)
+        # self.top_toggle_frame.grid_columnconfigure(0, weight=1)
+        # self.top_toggle_frame.propagate(False)
 
         #  Create Canvas for Scrollbar and frame housing all items
-        self.toggle_canvas = tk.Canvas(self)
-        # self.toggle_canvas.grid(row=0, column=0, sticky='news')
-        self.toggle_canvas.grid(row=2, column=8, rowspan=2, sticky='news')
+        self.toggle_canvas = Canvas(self, width=20, height=25)
+        self.toggle_canvas.grid(row=2, column=8, rowspan=4, sticky='news')
         
 
         #  Create Frame for ToggledBatchFrame objects
-        self.toggled_frame = Frame(self.toggle_canvas, width=20, height=25)
+        self.toggled_frame = Frame(self.toggle_canvas)
         self.toggle_canvas.create_window((0,0), window=self.toggled_frame, anchor='nw')
         # self.toggled_frame.grid(row=0, column=2)  # Removing this fixes the frame size, but causes expaned selection to overflow onto the left side
         
@@ -150,13 +148,9 @@ class RosContainerTab(ttk.Frame):
         self.x_scroll_toggled_canvas = Scrollbar(self.toggle_canvas, orient="horizontal")
         self.y_scroll_toggled_canvas = Scrollbar(self.toggle_canvas, orient="vertical")
 
-        self.x_scroll_toggled_canvas.config(command=self.toggle_canvas.xview)
-        self.y_scroll_toggled_canvas.config(command=self.toggle_canvas.yview)
-
+        #  Set the position of the scrollbars
         self.x_scroll_toggled_canvas.pack(side="bottom", fill="x")
         self.y_scroll_toggled_canvas.pack(side="right", fill="y")
-
-
 
          #  Add 9-by-1 CheckButtons to the frame
         rows = len(RosContainerTab.__container_batches)  # Get all batches that were parsed out in the xml
@@ -173,16 +167,15 @@ class RosContainerTab(ttk.Frame):
         self.create_batch_toggle()  #  Create all the Toggles
         self.toggled_frame.update_idletasks()
 
-        #  Resize the canvas frame to show exactly 1-by-5 Toggles and the scrollbar
-        #  Maybe try getting the subelement length and adjust depending on that?
-        # try:
-        #     # first5columns_width = max([self.toggle_widgets[j].winfo_width() for j in range(0, rows_to_show)])  # Find the widest element and set the minimum size to that
-        #     first5rows_height = sum([self.toggle_widgets[i].winfo_height() for i in range(0, rows_to_show)])  #  Sum the height of all elements and set the size to that + the scrollbar
-            
-        #     # self.top_toggle_frame.config(width=first5columns_width + self.vscrollbar.winfo_width(), height=first5rows_height)
-        #     self.toggle_canvas.config(scrollregion=self.toggle_canvas.bbox("all"))  # Set the scroll region
-        # except ValueError as e:
-        #     print(e)
+
+        #  Configure scollbars and scroll regions, this must be done here since we need to know the max size of the elements we added
+        self.toggle_canvas.config(scrollregion=self.toggle_canvas.bbox('all'))
+        self.toggle_canvas.config(xscrollcommand=self.x_scroll_toggled_canvas.set, yscrollcommand=self.y_scroll_toggled_canvas.set)
+        self.x_scroll_toggled_canvas.config(command=self.toggle_canvas.xview)
+        self.y_scroll_toggled_canvas.config(command=self.toggle_canvas.yview)
+
+
+
 
 
     ##  This method will create the batch frames 

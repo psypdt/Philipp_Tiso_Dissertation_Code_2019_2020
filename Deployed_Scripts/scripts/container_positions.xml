@@ -36,28 +36,4 @@
 		<z_orient>0.407281128692</z_orient>
 		<w_orient>-0.0384350205795</w_orient>
 	</orientation>
-</container><container name="new bucket">
-	<position>
-		<x_pos>0.807166218414</x_pos>
-		<y_pos>-0.210490378628</y_pos>
-		<z_pos>0.182477581464</z_pos>
-	</position>
-	<orientation>
-		<x_orient>0.663600500834</x_orient>
-		<y_orient>0.744097643539</y_orient>
-		<z_orient>-0.0750646678091</z_orient>
-		<w_orient>0.0178428646465</w_orient>
-	</orientation>
-</container><container name="new test container">
-	<position>
-		<x_pos>0.875029310034</x_pos>
-		<y_pos>0.232731350781</y_pos>
-		<z_pos>0.11618941811</z_pos>
-	</position>
-	<orientation>
-		<x_orient>0.989844986265</x_orient>
-		<y_orient>0.13327877044</y_orient>
-		<z_orient>0.0476258076954</z_orient>
-		<w_orient>0.0132459411473</w_orient>
-	</orientation>
 </container></root>

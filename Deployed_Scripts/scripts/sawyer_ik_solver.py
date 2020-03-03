@@ -60,6 +60,14 @@ class IKSolver:
         self.arm_speed = 0.28
         self.arm_timeout = 5
 
+        # Subscribe to topic where sortable messages arrive
+        ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=20)  
+
+        # Publish to this topic once object has been sorted, or if we got an error (data.successful_sort == False)
+        self.ik_pub_sorted = rospy.Publisher('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, queue_size=10)  
+
+        self.ik_sub_abort_sorting = rospy.Subscriber('ui/user/has_aborted', Bool, callback=None, queue_size=10)  # This will suspend all sorting 
+
         self.ik_sub_add_item = rospy.Subscriber('ui/user/is_moving_arm', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
         self.ik_pub_current_arm_pose = rospy.Publisher('sawyer_ik_sorting/sawyer_arm/pose/current', Pose, queue_size=10)  # Publish current arm pose
 
@@ -73,15 +81,10 @@ class IKSolver:
         except Exception as ex:
             print(ex)
             error_name = "IK solver crashed!"
-            error_msg = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\nPlese restart the program."
+            error_msg = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\n\nPlese restart the program."
             self.ik_solver_error_msg(error_name, error_msg)  # Display error if robot can't be enabled
             rospy.signal_shutdown("Failed to enable Robot")
-
-        #  Create a publisher that will publish strings to the ik_status topic
-        self.sorted_pub = rospy.Publisher('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
-        self.sorting_error_pub = rospy.Publisher('sawyer_ik_solver/sorting/has_failed', SortableObjectMsg, queue_size=10)  # This will publish the object & container pair which has failed
-
-        ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=10)  # Subscribe to topic where sortable messages arrive
+        
         ik_sub_shutdown = rospy.Subscriber('sawyer_ik_solver/change_to_state/shudown', Bool, callback=self.shutdown_callback, queue_size=10)  # Topic where main_gui tells solver to shutdown
 
         #  Move to default position when the ik solver is initially launched
@@ -239,13 +242,20 @@ class IKSolver:
             rospy.loginfo("Route to object was successfully executed")
             rospy.sleep(2)  # Sleep to simulate object being picked up
         else:
+            data.successful_sort = False  # Set member data to false since the sort failed
+            self.ik_pub_sorted.publish(data)  # Send object which has failed
+            rospy.sleep(2)
+            
+            #  Inform user of failure 
             object_name = data.object_name
             rospy.logwarn("Route Execution Failed: Invalid target object position")
             error_name = "Route Execution Failed (Invalid Position)"
-            error_msg = "Object \'%s\' can't be reached" % str(object_name)
+            error_msg = "Object \'%s\' can't be reached\n\nPress 'OK' to continue sorting." % str(object_name)
+            
+            #  Display error 
             self.ik_solver_error_msg(error_name, error_msg)
+
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
-            self.sorting_error_pub.publish(data)
             rospy.sleep(4)
             return
 
@@ -255,16 +265,23 @@ class IKSolver:
         if self.flex_ik_service_client(i_Pose=data.msg_container_pose, i_UseAdvanced=True):
             rospy.loginfo("Route to container was successfully executed")
             
-            self.sorted_pub.publish(data)
+            self.ik_pub_sorted.publish(data)
             rospy.sleep(2)
         else:
+            data.successful_sort = False
+            self.ik_pub_sorted.publish(data)  # Publish the failed object to the sorted topic, live view will inspect successful_sort and handle it
+            rospy.sleep(2)
+
+            #  Inform user that container is unreachable
             container_name = data.container_name
             rospy.logwarn("Route Execution Failed: Invalid target container position")
             error_name = "Route Execution Failed (Invalid Position)"
-            error_msg = "Container \'%s\' can't be reached" % str(container_name)
+            error_msg = "Container \'%s\' can't be reached\n\nPress 'OK' to continue sorting" % str(container_name)
+
+            #  Display error 
             self.ik_solver_error_msg(error_name, error_msg)
+
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)
-            self.sorting_error_pub.publish(data)
             rospy.sleep(4)
 
 

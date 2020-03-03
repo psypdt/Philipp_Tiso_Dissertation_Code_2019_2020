@@ -126,8 +126,7 @@ def append_to_xml_file(filename=None, name=None, obj_type=None, pose=None):
             root.append(trimmed_insertion_elem)  # Insert at the bottom of the file
             final_str = ModuleElementTree.tostring(root)
             xml_file.write(final_str)
-
-            
+       
 
         except ModuleElementTree.ParseError as error:  # File is empty
             root = Element('root')

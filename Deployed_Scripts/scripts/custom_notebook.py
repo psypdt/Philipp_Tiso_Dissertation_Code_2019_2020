@@ -379,7 +379,7 @@ class CustomNotebook(ttk.Notebook):
     def __initialize_custom_style(self):
         style = ttk.Style()
 
-        # Define the images which will be used to display the X
+        # Define the images which will be used to display
         self.images = (
             tk.PhotoImage("img_close", data='''
                 R0lGODlhCAAIAMIBAAAAADs7O4+Pj9nZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
@@ -400,10 +400,12 @@ class CustomNotebook(ttk.Notebook):
         style.element_create("close", "image", "img_close",
                             ("active", "pressed", "!disabled", "img_closepressed"),
                             ("active", "!disabled", "img_closeactive"), border=8, sticky='')
+        
         style.layout("CustomNotebook", [("CustomNotebook.client", {"sticky": "nswe"})])
+        
         style.layout("CustomNotebook.Tab", [
             ("CustomNotebook.tab", {
-                "sticky": "nswe", 
+                "sticky": "nswe",
                 "children": [
                     ("CustomNotebook.padding", {
                         "side": "top", 

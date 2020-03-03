@@ -36,4 +36,4 @@ class SortableObject(object):
     
     #  This method can be invoked to get a SortableObjectMessage object from the current object instance
     def to_sortableObjectMessage(self):
-        return SortableObjectMessage(self.m_name, self.m_assigned_container, self.m_start_pose, self.m_container_pose)
+        return SortableObjectMessage(self.m_name, self.m_assigned_container, self.m_start_pose, self.m_container_pose, True)

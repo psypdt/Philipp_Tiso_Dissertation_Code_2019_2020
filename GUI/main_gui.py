@@ -20,7 +20,7 @@ from custom_container_tab import RosContainerTab
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
 from sortable_object_class import SortableObject
 from live_sorting_progress_view_class import LiveViewFrame
-from create_new_localised_object import ObjectLocationInputBox
+from create_new_localised_object import ObjectLocationInputBox 
 
 import xml.etree.ElementTree as ET
 import threading
@@ -42,18 +42,17 @@ class Application(Frame):
         #  ROS initialization
         self.__to_sort_list_lock = threading.Lock()
         self.objects_to_send_list=[]  # A list containing all objects wich must be send to the ik solver
-        self.__is_abort = False
  
         rospy.init_node("main_gui_node")
-        self.gui_pub_sort_execute_item = rospy.Publisher('ui/sortable_object/sorting/execute', SortableObjectMsg, queue_size=4)  # execute sorting task
-        self.gui_sub_completed_item = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, callback=self.send_next_item_callback, queue_size=10)  # Listen to this topic to know when an item was sorted so we can send the next one
+        self.gui_pub_sort_execute_item = rospy.Publisher('ui/sortable_object/sorting/execute', SortableObjectMsg, queue_size=20)  # execute sorting task
+        # self.gui_sub_completed_item = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, callback=self.send_next_item_callback, queue_size=10)  # Listen to this topic to know when an item was sorted so we can send the next one
         self.gui_sub_failed_item = rospy.Subscriber('sawyer_ik_solver/sorting/has_failed', SortableObjectMsg, callback=self.send_item_after_failure_callback, queue_size=10)  # Listen for failed items, if one is detected then send the next item
 
         self.completed_sorting_task_sub = rospy.Subscriber('sawyer_ik_sorting/sortable_objects/all/sorted', Bool, callback=self.finished_sorting_callback, queue_size=10)
-        self.gui_pub_abort_sorting = rospy.Publisher('gui/user/has_aborted', Bool, queue_size=10)
+        self.gui_pub_abort_sorting = rospy.Publisher('gui/user/has_aborted', Bool, queue_size=1)
         
         self.shutdown_ik_pub = rospy.Publisher('sawyer_ik_solver/change_to_state/shudown', Bool, queue_size=10)
-        self.add_object_pub = rospy.Publisher('ui/user/is_moving_arm', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
+        self.gui_pub_user_is_moving_arm = rospy.Publisher('ui/user/is_moving_arm', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
 
         self.request_final_pos_pub = rospy.Publisher('ui/new_object/state/is_located', Bool, queue_size=10)
         self.final_obj_pos_sub = rospy.Subscriber('position_fetcher/new_object/final_pose', Pose, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
@@ -95,8 +94,8 @@ class Application(Frame):
         self.run.pack(side='top', ipadx=10, padx=10)
 
         #  Pressing this button will immediatly halt the sorting 
-        self.stop_sorting_button = tk.Button(self.sorting_command_frame, text="STOP SORTING", bg='red', width=18, command=self.abort_sorting_task)
-        self.stop_sorting_button.pack(side='bottom', ipadx=10, padx=30)
+        # self.stop_sorting_button = tk.Button(self.sorting_command_frame, text="ABORT SORTING", bg='orange', width=18, command=self.abort_sorting_task)
+        # self.stop_sorting_button.pack(side='bottom', ipadx=10, padx=30)
 
         self.sorting_command_frame.pack(side='left', ipadx=10)
 
@@ -121,15 +120,13 @@ class Application(Frame):
     def send_object_to_sort(self):
         #  Prevent user from trying to spam the sort button
         if self.is_sorting == True:
+            print("Is sorting, cant initiate new sorting task")
             return
-
-        if self.__is_abort == True:
-            self.__is_abort = False  # Reset flag so we can sort again
 
         self.is_sorting = True  # Set flag to indicate that sorting is in progress
 
         is_add_msg = Bool(data=False)
-        self.add_object_pub.publish(is_add_msg)  #  Tell IK solver that it's allowed to move the arm
+        self.gui_pub_user_is_moving_arm.publish(is_add_msg)  #  Tell IK solver that it's allowed to move the arm
 
         if self.notebook.m_all_open_tabs_dict.values() <= 0:
             self.is_sorting = False  # Reset flag since sorting failed
@@ -139,31 +136,47 @@ class Application(Frame):
             self.error_popup_msg(error_name, error_msg)
             return
 
-        #  Tell user to not approach robot while sorting, do this on seperate thread
-        warning_title = "Initiate Sorting!"
-        warning_message = "Press 'OK' to start sorting! \n\nDo not approach the robot unless you have stopped the sorting task!"
-        self.show_important_warning_msg(warning_title, warning_message)
-
-        # Create live view for user
-        self.top_lvl_window = tk.Toplevel(self.master)
-        self.top_lvl_window.title("Live Sorting Progress")
-        self.top_lvl_window.minsize(550,400)
-        self.live_sort_window = LiveViewFrame(self.top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
-
         #  For every tab, get m_selected_objects_dict
         for tab in self.notebook.m_all_open_tabs_dict.values():
-
+            #  TODO: Maybe look into sorting the items by object_name so that they get sorted in the order that the user sees them on the main gui
+            #  Generate list of items to send
             for item in tab.m_selected_objects_dict.values():  # Get all selected SortableObjects
                 msg = item.to_sortableObjectMessage()
                 self.objects_to_send_list.append(msg)
-        
-        #  Send the first item to the ik solver
+
+        #  Check that there are items to send  
         if len(self.objects_to_send_list) > 0:
-            first_msg = self.objects_to_send_list.pop()
-            self.gui_pub_sort_execute_item.publish(first_msg)
-            print("Sent first")
-        else:  # There is nothing to sort
-            self.is_sorting = False  # Reset flag since there is nothing to sort
+            # Create live view for user
+            top_lvl_window = tk.Toplevel(self.master)
+            top_lvl_window.title("Live Sorting Progress")
+            top_lvl_window.minsize(550,400)
+            live_sort_window = LiveViewFrame(top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
+        else:
+            self.is_sorting = False 
+            return
+
+        #  Send all messages
+        for msg in self.objects_to_send_list:
+            self.gui_pub_sort_execute_item.publish(msg)
+        
+        #  Clear the list
+        del self.objects_to_send_list[:]
+        
+        #  Send the first item to the IK solver
+        # if len(self.objects_to_send_list) > 0:
+        #     #  Tell user to not approach robot while sorting, do this on seperate thread
+        #     warning_title = "Initiate Sorting!"
+        #     warning_message = "Press 'OK' to start sorting! \n\nDo not approach the robot unless you have stopped the sorting task!"
+        #     self.show_important_warning_msg(warning_title, warning_message)
+
+        #  Here we would prompt the user to start the task
+
+        #     #  Send to IK solver
+        #     first_msg = self.objects_to_send_list.pop()
+        #     self.gui_pub_sort_execute_item.publish(first_msg)
+        #     print("Sent first item")
+        # else:  # There is nothing to sort
+        #     self.is_sorting = False  # Reset flag since there is nothing to sort
                 
 
 
@@ -171,7 +184,7 @@ class Application(Frame):
     ##  This method is a callback that will be used to send a new sortable object once the ik solver has completed sorting a single object
     def send_next_item_callback(self, data):
         #  Make sure that the sorting task is still active (hasn't been stopped by user)
-        if self.is_sorting and not self.__is_abort:
+        if self.is_sorting:
 
             self.__to_sort_list_lock.acquire()  # Enter critical section
 
@@ -187,7 +200,7 @@ class Application(Frame):
     ##  This callback is invoked if an object was not sorted, to prevent blocking we call this to send the next item
     def send_item_after_failure_callback(self, data):
         #  Make sure we are in sorting mode
-        if self.is_sorting and not self.__is_abort:
+        if self.is_sorting:
         
             self.__to_sort_list_lock.acquire()  # Entering critical section
             
@@ -196,6 +209,7 @@ class Application(Frame):
                 self.__to_sort_list_lock.release()  # Exit critical section
 
                 self.gui_pub_sort_execute_item.publish(next_message)
+                print("Sent item after fail")
 
 
 
@@ -204,7 +218,6 @@ class Application(Frame):
     def finished_sorting_callback(self, state):
         if state.data == True:
             self.is_sorting = False
-
             print("All Done")
 
 
@@ -229,23 +242,24 @@ class Application(Frame):
             return
 
         is_add_msg = Bool(data=True)
-        self.add_object_pub.publish(is_add_msg)
+        self.gui_pub_user_is_moving_arm.publish(is_add_msg)
 
         prompt = tkMessageBox.askokcancel('Create New object', 'Please move the robot arm over an object you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
         is_add_msg = Bool(data=False)
 
+        #  User wants to add new object
         if prompt == True:
-            is_add_msg = Bool(data=True)  # Send this to get the final positon  
-            self.add_object_pub.publish(is_add_msg)
+            is_add_msg = Bool(data=True)    
+            self.gui_pub_user_is_moving_arm.publish(is_add_msg)
             
             self.is_creating_container = False  # Reset this flag to false since the user is adding an object
             
             is_done_msg = Bool(data=True)
-            self.request_final_pos_pub.publish(is_done_msg)
+            self.request_final_pos_pub.publish(is_done_msg)  # Send this to get the final positon
 
         else:
             is_add_msg = Bool(data=False)
-            self.add_object_pub.publish(is_add_msg)
+            self.gui_pub_user_is_moving_arm.publish(is_add_msg)
 
 
 
@@ -256,38 +270,44 @@ class Application(Frame):
             return
 
         is_add_msg = Bool(data=True)
-        self.add_object_pub.publish(is_add_msg)
+        self.gui_pub_user_is_moving_arm.publish(is_add_msg)
 
         prompt = tkMessageBox.askokcancel('Create New Container', 'Please move the robot arm over a Container you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
         is_add_msg = Bool(data=False)
 
         if prompt == True:
-            is_add_msg = Bool(data=True)  # Send this to get the final positon  
-            self.add_object_pub.publish(is_add_msg)
+            is_add_msg = Bool(data=True)  
+            self.gui_pub_user_is_moving_arm.publish(is_add_msg)
             
             self.is_creating_container = True  # Set this flag to True since the user is adding a new container
             
             is_done_msg = Bool(data=True)
-            self.request_final_pos_pub.publish(is_done_msg)
+            self.request_final_pos_pub.publish(is_done_msg)  # Retreive final position from robot
 
         else:
             is_add_msg = Bool(data=False)
-            self.add_object_pub.publish(is_add_msg)
+            self.gui_pub_user_is_moving_arm.publish(is_add_msg)
 
 
 
     ##  This is a callback which will get the pose of a new object the user wants to add
     def receive_new_object_final_pose_callback(self, pose):
         #  Ask the user to provide a name and type for the object
+        print("Start top level create obj")
         self.top_lvl_prompt_window = tk.Toplevel(self.master)
         self.top_lvl_prompt_window.title("Create New Object")
         self.top_lvl_prompt_window.minsize(300,80)
+        print("End top level create obj")
 
         #  If the user is adding a container choose tehe appropriate input box
         if self.is_creating_container:
             self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose, self.notebook, is_object=False)
         else:
             self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose, self.notebook)
+        
+        #  Reset robot arm to default position
+        is_add_msg = Bool(data=False)
+        self.gui_pub_user_is_moving_arm.publish(is_add_msg)
 
 
 
@@ -304,16 +324,17 @@ class Application(Frame):
 
     ##  This method is called when the sorting task must be halted immediatly
     def abort_sorting_task(self):
-        if self.is_sorting == False:
+        #  Can't abort if there is no sorting, or if abort was already emitted
+        if self.is_sorting == False: 
             return
         
         self.is_sorting = False  # Set this to false to stop sending more objects
-        self.__is_abort = True  # Sorting was aborted
         
         #  Need thread safe way to remove all items from queue
         self.__to_sort_list_lock.acquire()
         del self.objects_to_send_list[:]  # Clear the list so that there is nothing left to sort
         self.__to_sort_list_lock.release()
+        print("List after abort is: %s" % self.objects_to_send_list)
 
         state = Bool(data=True)
         self.gui_pub_abort_sorting.publish(state)  # Notify live view that task has been aborted
@@ -326,14 +347,18 @@ class Application(Frame):
     ##  This method will create a popup if some error occures
     def error_popup_msg(self, error_name, error_msg):
         title = "Error: " + str(error_name)
+        print("Start error")
         tkMessageBox.showerror(title, error_msg)
+        print("Finished error")
 
 
 
     ##  This method will display a warning popup
     def show_important_warning_msg(self, warning_name, warning_msg):
         title = "Warning: " + str(warning_name)
+        print("Start warning")
         tkMessageBox.showwarning(title, warning_msg)
+        print("Finished warning")
 
     
 

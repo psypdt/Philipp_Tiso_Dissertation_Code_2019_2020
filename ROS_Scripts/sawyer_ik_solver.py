@@ -19,7 +19,7 @@
 from __future__ import print_function
 
 import rospy
-
+import copy
 import Tkinter as tk
 import tkMessageBox
 
@@ -60,6 +60,12 @@ class IKSolver:
         self.arm_speed = 0.28
         self.arm_timeout = 5
 
+        # Subscribe to topic where sortable messages arrive
+        ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=20)  
+
+        # Publish to this topic once object has been sorted, or if we got an error (data.successful_sort == False)
+        self.ik_pub_sorted = rospy.Publisher('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, queue_size=10)  
+
         self.ik_sub_abort_sorting = rospy.Subscriber('ui/user/has_aborted', Bool, callback=None, queue_size=10)  # This will suspend all sorting 
 
         self.ik_sub_add_item = rospy.Subscriber('ui/user/is_moving_arm', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
@@ -78,18 +84,16 @@ class IKSolver:
             error_msg = "The Inverse Kinematic solver has crashed. Moving the robot is no longer possible.\n\nPlese restart the program."
             self.ik_solver_error_msg(error_name, error_msg)  # Display error if robot can't be enabled
             rospy.signal_shutdown("Failed to enable Robot")
-
-        #  Create a publisher that will publish strings to the ik_status topic
-        self.ik_pub_sorted = rospy.Publisher('sawyer_ik_sorting/sortable_objects/object/sorted', SortableObjectMsg, queue_size=10)  # Publish to this topic once object has been sorted
-        self.ik_pub_sorting_error = rospy.Publisher('sawyer_ik_solver/sorting/has_failed', SortableObjectMsg, queue_size=10)  # This will publish the object & container pair which has failed
-
-        ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=4)  # Subscribe to topic where sortable messages arrive
+        
         ik_sub_shutdown = rospy.Subscriber('sawyer_ik_solver/change_to_state/shudown', Bool, callback=self.shutdown_callback, queue_size=10)  # Topic where main_gui tells solver to shutdown
 
         #  Move to default position when the ik solver is initially launched
         self.sawyer_arm = intera_interface.Limb('right')
-        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed) 
+        self.sawyer_gripper = intera_interface.Gripper()
         
+        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed) 
+        self.sawyer_gripper.open()
+
         rospy.spin()
 
 
@@ -170,8 +174,6 @@ class IKSolver:
             ik_ServiceReq.nullspace_goal.append(goal) 
 
             ik_ServiceReq.nullspace_gain.append(0.4)
-        # else:
-        #     rospy.loginfo("Using Simple IK Solver")
 
 
         ##############################################################################################
@@ -188,8 +190,6 @@ class IKSolver:
             rospy.logerr("Service Call Failed: %s" % (ex,))
             return False
 
-        # rospy.loginfo("Advanced IKService Solver Running... ")
-
 
         #  Check if the result is valid, and what seed was used to obtain the solution
         if (response.result_type[0] > 0):
@@ -203,12 +203,6 @@ class IKSolver:
 
             #  Format the joints such that they can be passed to the robot by making a Limb-API complient dictionary
             joint_solution = dict(zip(response.joints[0].name, response.joints[0].position))
-
-            # rospy.loginfo("\nIK Joint Solution:\n%s", joint_solution)
-            # rospy.loginfo("------------------")
-            # rospy.loginfo("Response Message:\n%s", response)
-
-            # rospy.loginfo("Moving To Target Pose...")
 
             #  Move the limb into the final position
             self.sawyer_arm = intera_interface.Limb(i_Limb)
@@ -236,17 +230,29 @@ class IKSolver:
         self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
         rospy.sleep(2)
 
+        hover_pose = copy.deepcopy(data.msg_object_pose)
+        hover_pose.position.z = data.msg_object_pose.position.z + 0.2 #  hover over the object
+
         #  Move to the object which will be picked up
-        if self.flex_ik_service_client(i_Pose=data.msg_object_pose, i_UseAdvanced=True):
+        if self.flex_ik_service_client(i_Pose=hover_pose, i_UseAdvanced=True):
             rospy.loginfo("Route to object was successfully executed")
+            
+            #  Approach the object and pick it up
+            self.approach_and_pickup_object(data.msg_object_pose, 600)
             rospy.sleep(2)  # Sleep to simulate object being picked up
+
         else:
-            self.ik_pub_sorting_error.publish(data)  # Send object which has failed
+            data.successful_sort = False  # Set member data to false since the sort failed
+            self.ik_pub_sorted.publish(data)  # Send object which has failed
+            self._open_gripper()  # Reset gripper
+            rospy.sleep(2)
+
+            
             #  Inform user of failure 
             object_name = data.object_name
             rospy.logwarn("Route Execution Failed: Invalid target object position")
             error_name = "Route Execution Failed (Invalid Position)"
-            error_msg = "Object \'%s\' can't be reached\n\nPess 'OK' to continue sorting." % str(object_name)
+            error_msg = "Object \'%s\' can't be reached\n\nPress 'OK' to continue sorting." % str(object_name)
             
             #  Display error 
             self.ik_solver_error_msg(error_name, error_msg)
@@ -261,10 +267,15 @@ class IKSolver:
         if self.flex_ik_service_client(i_Pose=data.msg_container_pose, i_UseAdvanced=True):
             rospy.loginfo("Route to container was successfully executed")
             
+            self._open_gripper()  # Release object over container
+
             self.ik_pub_sorted.publish(data)
             rospy.sleep(2)
         else:
-            self.sorting_erik_pub_sorting_errorror_pub.publish(data)
+            data.successful_sort = False
+            self.ik_pub_sorted.publish(data)  # Publish the failed object to the sorted topic, live view will inspect successful_sort and handle it
+            rospy.sleep(2)
+
             #  Inform user that container is unreachable
             container_name = data.container_name
             rospy.logwarn("Route Execution Failed: Invalid target container position")
@@ -280,10 +291,74 @@ class IKSolver:
 
 
 
+    ##  This method will be used to approach an object and grab it
+    def approach_and_pickup_object(self, final_pose, steps):
+        #  Slow the robot down a bit
+        self.sawyer_arm.set_joint_position_speed(0.1)
+
+        #  Get the current position of the gripper/arm
+        current_pose = self.sawyer_arm.endpoint_pose()
+        r = rospy.Rate(1/(4.0/steps))  # Reset do default publishing rate with a timeout of 4
+
+        #  Calculate differance between the current position and the desired end position
+        ik_delta = Pose()
+        ik_delta.position.x = (current_pose['position'].x - final_pose.position.x) / steps 
+        ik_delta.position.y = (current_pose['position'].y - final_pose.position.y) / steps
+        ik_delta.position.z = (current_pose['position'].z - final_pose.position.z) / steps
+        ik_delta.orientation.x = (current_pose['orientation'].x - final_pose.orientation.x) / steps
+        ik_delta.orientation.y = (current_pose['orientation'].y - final_pose.orientation.y) / steps
+        ik_delta.orientation.z = (current_pose['orientation'].z - final_pose.orientation.z) / steps
+        ik_delta.orientation.w = (current_pose['orientation'].w - final_pose.orientation.w) / steps
+
+        # rospy.sleep(3)
+
+        #  Move towards the object from the current position
+        for d in range(int(steps), -1, -1):
+            ik_step =Pose()
+
+            ik_step.position.x = d*ik_delta.position.x + final_pose.position.x
+            ik_step.position.y = d*ik_delta.position.y + final_pose.position.y
+            ik_step.position.z = d*ik_delta.position.z + final_pose.position.z
+            ik_step.orientation.x = d*ik_delta.orientation.x + final_pose.orientation.x
+            ik_step.orientation.y = d*ik_delta.orientation.y + final_pose.orientation.y
+            ik_step.orientation.z = d*ik_delta.orientation.z + final_pose.orientation.z
+            ik_step.orientation.w = d*ik_delta.orientation.w + final_pose.orientation.w
+            joint_angles = self.sawyer_arm.ik_request(ik_step, 'right_gripper_tip')
+
+            if joint_angles:
+                self.sawyer_arm.move_to_joint_positions(joint_angles)
+            r.sleep()
+
+        rospy.sleep(0.4)
+        self._close_gripper(0.0075)  # Grab object
+        rospy.sleep(0.5)
+
+
+
+
+
+    ##  Closes the gripper to some degree
+    def _close_gripper(self, degree=0):
+        self.sawyer_gripper.close(degree)
+        rospy.sleep(0.01)
+
+
+
+
+
+    ##  Opens the gripper
+    def _open_gripper(self):
+        self.sawyer_gripper.open()
+        rospy.sleep(0.01)
+
+
+
+
     ##  Simple callback that prevents the robot from doing any sorting while human is working with it
     def disable_sorting_capability_callback(self, msg):
         self.is_adding_new_item = msg.data
 
+        #  TODO: The has_returned_home flag may not be needed, could remove it
         #  User wants to create object and arm is not in default position
         if msg.data == True and self.has_returned_home == False: 
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # Move the arm to default, then disable movement 
@@ -291,6 +366,7 @@ class IKSolver:
 
         #  Reset the has_returned_home flag once the user is done moving the arm manually
         if msg.data == False and self.has_returned_home == True:
+            # self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # Move the arm to default
             self.has_returned_home = False  
 
 

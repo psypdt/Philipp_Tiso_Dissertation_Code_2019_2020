@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+# Last Modified by: Philipp Domenico Tiso
 
 
 from __future__ import print_function
@@ -310,8 +310,6 @@ class IKSolver:
         ik_delta.orientation.z = (current_pose['orientation'].z - final_pose.orientation.z) / steps
         ik_delta.orientation.w = (current_pose['orientation'].w - final_pose.orientation.w) / steps
 
-        # rospy.sleep(3)
-
         #  Move towards the object from the current position
         for d in range(int(steps), -1, -1):
             ik_step =Pose()
@@ -358,7 +356,6 @@ class IKSolver:
     def disable_sorting_capability_callback(self, msg):
         self.is_adding_new_item = msg.data
 
-        #  TODO: The has_returned_home flag may not be needed, could remove it
         #  User wants to create object and arm is not in default position
         if msg.data == True and self.has_returned_home == False: 
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # Move the arm to default, then disable movement 
@@ -384,7 +381,8 @@ class IKSolver:
             self.ik_pub_current_arm_pose.publish(current_pose)
 
 
-
+    
+    ##  Displays error message to user
     def ik_solver_error_msg(self, errorTitle, errorMsg):
         error_title = "Error: " + errorTitle
         root = tk.Tk()
@@ -393,6 +391,7 @@ class IKSolver:
         root.destroy()
     
 
+    ##  Callback that initiates node shutdown 
     def shutdown_callback(self, data):
         if data == True:
             rospy.signal_shutdown("Main GUI terminated")

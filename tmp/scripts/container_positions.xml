@@ -1,50 +1,63 @@
-<?xml version="1.0"?>
-
 <root>
-    <container name="Bucket">
-        <position>
-			<x_pos>0.7519686121884195</x_pos>
-	        <y_pos>-0.3017746579997936</y_pos>
-            <z_pos>0.082403012433622</z_pos>
-		</position>
 
-		<orientation>
-			<x_orient>0.7075097486449031</x_orient>
-			<y_orient>0.7066922454878554</y_orient>
-			<z_orient>-0.0030913164974091362</z_orient>
-			<w_orient>-0.0025435215886281475</w_orient>
-		</orientation>
-    </container>
-
-    <container name="Box">
-        <position>
-			<x_pos>0.7519686121884195</x_pos>
-	        <y_pos>-0.3017746579997936</y_pos>
-            <z_pos>0.082403012433622</z_pos>
-		</position>
-
-		<orientation>
-			<x_orient>0.7075097486449031</x_orient>
-			<y_orient>0.7066922454878554</y_orient>
-			<z_orient>-0.0030913164974091362</z_orient>
-			<w_orient>-0.0025435215886281475</w_orient>
-		</orientation>
-    </container>
-
-    <container name="Cardboard Box">
-        <position>
-			<x_pos>0.7519686121884195</x_pos>
-	        <y_pos>-0.3017746579997936</y_pos>
-            <z_pos>0.082403012433622</z_pos>
-		</position>
-
-		<orientation>
-			<x_orient>0.7075097486449031</x_orient>
-			<y_orient>0.7066922454878554</y_orient>
-			<z_orient>-0.0030913164974091362</z_orient>
-			<w_orient>-0.0025435215886281475</w_orient>
-		</orientation>
-    </container>
-
-
-</root>
+<container name="right container">
+	<position>
+		<x_pos>0.373186310745</x_pos>
+		<y_pos>-0.629325043072</y_pos>
+		<z_pos>0.235246735632</z_pos>
+	</position>
+	<orientation>
+		<x_orient>0.783362462852</x_orient>
+		<y_orient>-0.617469668449</y_orient>
+		<z_orient>-0.00361733256803</z_orient>
+		<w_orient>0.0711433429375</w_orient>
+	</orientation>
+</container><container name="left container">
+	<position>
+		<x_pos>0.462439986917</x_pos>
+		<y_pos>0.765201757854</y_pos>
+		<z_pos>0.121232589358</z_pos>
+	</position>
+	<orientation>
+		<x_orient>0.442114505696</x_orient>
+		<y_orient>0.896091976501</y_orient>
+		<z_orient>0.00706670684956</z_orient>
+		<w_orient>-0.0387813764363</w_orient>
+	</orientation>
+</container><container name="front container">
+	<position>
+		<x_pos>0.965710295936</x_pos>
+		<y_pos>0.210180465433</y_pos>
+		<z_pos>0.279319956712</z_pos>
+	</position>
+	<orientation>
+		<x_orient>0.908961683722</x_orient>
+		<y_orient>0.0802090327203</y_orient>
+		<z_orient>0.407281128692</z_orient>
+		<w_orient>-0.0384350205795</w_orient>
+	</orientation>
+</container><container name="new bucket">
+	<position>
+		<x_pos>0.807166218414</x_pos>
+		<y_pos>-0.210490378628</y_pos>
+		<z_pos>0.182477581464</z_pos>
+	</position>
+	<orientation>
+		<x_orient>0.663600500834</x_orient>
+		<y_orient>0.744097643539</y_orient>
+		<z_orient>-0.0750646678091</z_orient>
+		<w_orient>0.0178428646465</w_orient>
+	</orientation>
+</container><container name="new test container">
+	<position>
+		<x_pos>0.875029310034</x_pos>
+		<y_pos>0.232731350781</y_pos>
+		<z_pos>0.11618941811</z_pos>
+	</position>
+	<orientation>
+		<x_orient>0.989844986265</x_orient>
+		<y_orient>0.13327877044</y_orient>
+		<z_orient>0.0476258076954</z_orient>
+		<w_orient>0.0132459411473</w_orient>
+	</orientation>
+</container></root>

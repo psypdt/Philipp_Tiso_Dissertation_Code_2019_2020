@@ -40,7 +40,7 @@ def trim_xml_version_element(elem):
 
 
 ##  Method generates xml for an object
-def generate_xml_from_data(name, obj_type, pose):
+def generate_xml_from_data(name, obj_type, pose, gripper_dist):
 
     #  If the object type were None, then this would be a container
     has_type = True
@@ -58,6 +58,10 @@ def generate_xml_from_data(name, obj_type, pose):
         tag_type = SubElement(tag_object, 'type')
         formatted_type = str(obj_type).lower()  # Format the type to make letter cases irrelevant
         tag_type.text = formatted_type
+
+        #  Create gripper position tag
+        gripper_distance = SubElement(tag_object, 'gripper_distance')
+        gripper_distance.text = str(gripper_dist)  # Must be a string so we can serialize it
 
     #  Generate xml from position data
     generate_xml_from_pos(pose, tag_object)
@@ -108,7 +112,7 @@ def generate_xml_from_pos(pose, tag_main_element):
 
 
 ##  This method will write the generated xml snippets into an existing file containing containers or objects
-def append_to_xml_file(filename=None, name=None, obj_type=None, pose=None):
+def append_to_xml_file(filename=None, name=None, obj_type=None, pose=None, gripper_dist=None):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     suffix = ".xml"
     
@@ -116,7 +120,7 @@ def append_to_xml_file(filename=None, name=None, obj_type=None, pose=None):
     
     with open(name=full_path, mode='r+') as xml_file:
         #  Generate new tag
-        raw_insertion_elem = generate_xml_from_data(name, obj_type, pose)
+        raw_insertion_elem = generate_xml_from_data(name, obj_type, pose, gripper_dist)
         
         try:
             #  Get root of the file, allows us to insert inbetween the root tag
@@ -126,8 +130,7 @@ def append_to_xml_file(filename=None, name=None, obj_type=None, pose=None):
             root.append(trimmed_insertion_elem)  # Insert at the bottom of the file
             final_str = ModuleElementTree.tostring(root)
             xml_file.write(final_str)
-
-            
+       
 
         except ModuleElementTree.ParseError as error:  # File is empty
             root = Element('root')

@@ -18,6 +18,7 @@ from custom_container_tab import RosContainerTab
 
 #  Helper class imports
 from intera_examples.msg import SortableObjectMessage as SortableObjectMsg
+from intera_examples.msg import PoseGrippMessage
 from sortable_object_class import SortableObject
 from live_sorting_progress_view_class import LiveViewFrame
 from create_new_localised_object import ObjectLocationInputBox 
@@ -55,7 +56,7 @@ class Application(Frame):
         self.gui_pub_user_is_moving_arm = rospy.Publisher('ui/user/is_moving_arm', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
 
         self.request_final_pos_pub = rospy.Publisher('ui/new_object/state/is_located', Bool, queue_size=10)
-        self.final_obj_pos_sub = rospy.Subscriber('position_fetcher/new_object/final_pose', Pose, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
+        self.final_obj_pos_sub = rospy.Subscriber('position_fetcher/new_object/final_pose', PoseGrippMessage, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
 
         rospy.Rate(10)
 

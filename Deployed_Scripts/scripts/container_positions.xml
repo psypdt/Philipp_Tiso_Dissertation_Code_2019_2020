@@ -1,39 +1,27 @@
 <root>
 
-<container name="right container">
+<container name="cardboard container">
 	<position>
-		<x_pos>0.373186310745</x_pos>
-		<y_pos>-0.629325043072</y_pos>
-		<z_pos>0.235246735632</z_pos>
+		<x_pos>0.628866917157</x_pos>
+		<y_pos>-0.508274814799</y_pos>
+		<z_pos>0.22970272271</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.783362462852</x_orient>
-		<y_orient>-0.617469668449</y_orient>
-		<z_orient>-0.00361733256803</z_orient>
-		<w_orient>0.0711433429375</w_orient>
+		<x_orient>0.991185282815</x_orient>
+		<y_orient>0.123808401133</y_orient>
+		<z_orient>-0.0450795831595</z_orient>
+		<w_orient>0.0138219434875</w_orient>
 	</orientation>
-</container><container name="left container">
+</container><container name="left carboard container">
 	<position>
-		<x_pos>0.462439986917</x_pos>
-		<y_pos>0.765201757854</y_pos>
-		<z_pos>0.121232589358</z_pos>
+		<x_pos>0.537938071416</x_pos>
+		<y_pos>0.680619703512</y_pos>
+		<z_pos>0.131905859631</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.442114505696</x_orient>
-		<y_orient>0.896091976501</y_orient>
-		<z_orient>0.00706670684956</z_orient>
-		<w_orient>-0.0387813764363</w_orient>
-	</orientation>
-</container><container name="front container">
-	<position>
-		<x_pos>0.965710295936</x_pos>
-		<y_pos>0.210180465433</y_pos>
-		<z_pos>0.279319956712</z_pos>
-	</position>
-	<orientation>
-		<x_orient>0.908961683722</x_orient>
-		<y_orient>0.0802090327203</y_orient>
-		<z_orient>0.407281128692</z_orient>
-		<w_orient>-0.0384350205795</w_orient>
+		<x_orient>0.680046108677</x_orient>
+		<y_orient>0.732821419545</y_orient>
+		<z_orient>-0.0034384633753</z_orient>
+		<w_orient>0.0223211581137</w_orient>
 	</orientation>
 </container></root>

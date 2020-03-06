@@ -281,6 +281,7 @@ class CustomNotebook(ttk.Notebook):
             obj_position.orientation.z = float(oz)
             obj_position.orientation.w = float(ow)
 
+
         sortable = SortableObject(obj_name=name, obj_position=obj_position, batch_type=obj_batch_type)
 
         return sortable

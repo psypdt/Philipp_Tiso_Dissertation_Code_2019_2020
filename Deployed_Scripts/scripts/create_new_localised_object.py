@@ -21,8 +21,9 @@ class ObjectLocationInputBox(ttk.Frame):
     def __init__(self, parent=None, obj_pose=None, notebook=None, is_object=True):
         ttk.Frame.__init__(self, parent)
         
-        self.new_pose = obj_pose
+        self.new_pose = obj_pose.pose
         self.p_notebook = notebook  # The partents notebook which will update the gui
+        self.gripper_dist = obj_pose.gripper_position
 
         #  Setup relevant widgets when adding a new sortable object
         if is_object:
@@ -90,7 +91,7 @@ class ObjectLocationInputBox(ttk.Frame):
             return
 
         
-        RXM.append_to_xml_file(filename="object_positions", name=new_name, obj_type=new_type, pose=self.new_pose)
+        RXM.append_to_xml_file(filename="object_positions", name=new_name, obj_type=new_type, pose=self.new_pose, gripper_dist=self.gripper_dist)
 
         if self.p_notebook != None:
             self.p_notebook.update_batch_contents()

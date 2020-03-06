@@ -18,9 +18,10 @@ from custom_container_tab import RosContainerTab
 
 #  Helper class imports
 from psypdt_dissertation.msg import SortableObjectMessage as SortableObjectMsg
+from psypdt_dissertation.msg import PoseGrippMessage
 from sortable_object_class import SortableObject
 from live_sorting_progress_view_class import LiveViewFrame
-from create_new_localised_object import ObjectLocationInputBox
+from create_new_localised_object import ObjectLocationInputBox 
 
 import xml.etree.ElementTree as ET
 import threading
@@ -55,7 +56,7 @@ class Application(Frame):
         self.gui_pub_user_is_moving_arm = rospy.Publisher('ui/user/is_moving_arm', Bool, queue_size=10)  # Tell IK solver that its not allowed to move
 
         self.request_final_pos_pub = rospy.Publisher('ui/new_object/state/is_located', Bool, queue_size=10)
-        self.final_obj_pos_sub = rospy.Subscriber('position_fetcher/new_object/final_pose', Pose, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
+        self.final_obj_pos_sub = rospy.Subscriber('position_fetcher/new_object/final_pose', PoseGrippMessage, callback=self.receive_new_object_final_pose_callback, queue_size=10)  # Listen for final object position
 
         rospy.Rate(10)
 
@@ -247,14 +248,15 @@ class Application(Frame):
         prompt = tkMessageBox.askokcancel('Create New object', 'Please move the robot arm over an object you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
         is_add_msg = Bool(data=False)
 
+        #  User wants to add new object
         if prompt == True:
-            is_add_msg = Bool(data=True)  # Send this to get the final positon  
+            is_add_msg = Bool(data=True)    
             self.gui_pub_user_is_moving_arm.publish(is_add_msg)
             
             self.is_creating_container = False  # Reset this flag to false since the user is adding an object
             
             is_done_msg = Bool(data=True)
-            self.request_final_pos_pub.publish(is_done_msg)
+            self.request_final_pos_pub.publish(is_done_msg)  # Send this to get the final positon
 
         else:
             is_add_msg = Bool(data=False)
@@ -275,13 +277,13 @@ class Application(Frame):
         is_add_msg = Bool(data=False)
 
         if prompt == True:
-            is_add_msg = Bool(data=True)  # Send this to get the final positon  
+            is_add_msg = Bool(data=True)  
             self.gui_pub_user_is_moving_arm.publish(is_add_msg)
             
             self.is_creating_container = True  # Set this flag to True since the user is adding a new container
             
             is_done_msg = Bool(data=True)
-            self.request_final_pos_pub.publish(is_done_msg)
+            self.request_final_pos_pub.publish(is_done_msg)  # Retreive final position from robot
 
         else:
             is_add_msg = Bool(data=False)
@@ -303,6 +305,10 @@ class Application(Frame):
             self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose, self.notebook, is_object=False)
         else:
             self.new_object_prompt = ObjectLocationInputBox(self.top_lvl_prompt_window, pose, self.notebook)
+        
+        #  Reset robot arm to default position
+        is_add_msg = Bool(data=False)
+        self.gui_pub_user_is_moving_arm.publish(is_add_msg)
 
 
 

@@ -27,7 +27,7 @@ class LiveViewFrame(ttk.Frame):
         ttk.Frame.__init__(self, parent)
 
         self.m_active_containers = i_all_containers
-        self.m_selected_objects = i_selected_objects
+        self.m_selected_objects = i_selected_objects  # Names of all selected objects
 
         self.m_container_item_dict = dict()  # Dictionary containing a list of items for each container
         self.setup_widgets()
@@ -75,7 +75,8 @@ class LiveViewFrame(ttk.Frame):
 
         #  Define some highliting for identifying failed & aborted sorts
         self.container_TreeView.tag_configure('failed_sort', background='red')  # Anything with this tag will be highlited in red
-        self.container_TreeView.tag_configure('aborted_sort', background='orange')
+        self.container_TreeView.tag_configure('in_progress_sort', background='orange')
+        # self.container_TreeView.tag_configure('aborted_sort', background='orange')
 
         #  Create horizontal scrollbar
         treeXscroll = ttk.Scrollbar(self.canvas, orient="horizontal")
@@ -98,6 +99,10 @@ class LiveViewFrame(ttk.Frame):
         self.canvas.pack()
 
 
+        #  Add the first item in the sorting list, mark it as in progress
+        self.container_TreeView.insert("", tk.END, values=("...", str(self.m_selected_objects[0]).capitalize(), "IN PROGRESS"), tags=('in_progress_sort',))
+
+
 
     ##  Callback method that will update the text in the container widgets when an object has been either sorted, or failed to sort
     def update_container_status_callback(self, data):
@@ -115,12 +120,23 @@ class LiveViewFrame(ttk.Frame):
 
                 self.sub_sorted.unregister()
 
+            #  Check that there is an in progress item to remove
+            if len(self.container_TreeView.get_children()) > 0:
+                last_item = self.container_TreeView.get_children()[-1]  # Get last item
+                self.container_TreeView.delete(last_item)  # Delete last item
+                
+
             #  Highlight the object appropriatly depending on if it was sorted or not
             if data.successful_sort == True:
                 self.container_TreeView.insert("", tk.END, values=(str(data.container_name).capitalize(), str(data.object_name).capitalize(), "SORTED"), tags=('successful_sort',))
+                
             elif data.successful_sort == False:
                 self.container_TreeView.insert("", tk.END, values=(str(data.container_name).capitalize(), str(data.object_name).capitalize(), "FAILED"), tags=('failed_sort',))
          
+            #  Check if we can mark the next object as in progress
+            if len(self.m_selected_objects) > 0:
+                self.container_TreeView.insert("", tk.END, values=("...", str(self.m_selected_objects[0]).capitalize(), "IN PROGRESS"), tags=('in_progress_sort',))
+
 
 
     ##  This callback is invoked if the user has canceled the entire sorting task

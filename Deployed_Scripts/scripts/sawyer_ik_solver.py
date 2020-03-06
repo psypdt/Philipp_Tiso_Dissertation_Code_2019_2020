@@ -13,13 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+# Last Modified by: Philipp Domenico Tiso
 
 
 from __future__ import print_function
 
 import rospy
-
+import copy
 import Tkinter as tk
 import tkMessageBox
 
@@ -40,6 +40,7 @@ from std_msgs.msg import (
  
 from sensor_msgs.msg import JointState
 from psypdt_dissertation.msg import SortableObjectMessage as SortableObjectMsg
+from psypdt_dissertation.msg import PoseGrippMessage
 
 from intera_core_msgs.srv import (
     SolvePositionIK,
@@ -59,6 +60,7 @@ class IKSolver:
         
         self.arm_speed = 0.28
         self.arm_timeout = 5
+        self.hover_dist = 0.06
 
         # Subscribe to topic where sortable messages arrive
         ik_sub_sorting = rospy.Subscriber('ui/sortable_object/sorting/execute', SortableObjectMsg, callback=self.sort_object_callback, queue_size=20)  
@@ -69,7 +71,7 @@ class IKSolver:
         self.ik_sub_abort_sorting = rospy.Subscriber('ui/user/has_aborted', Bool, callback=None, queue_size=10)  # This will suspend all sorting 
 
         self.ik_sub_add_item = rospy.Subscriber('ui/user/is_moving_arm', Bool, callback=self.disable_sorting_capability_callback, queue_size=10)
-        self.ik_pub_current_arm_pose = rospy.Publisher('sawyer_ik_sorting/sawyer_arm/pose/current', Pose, queue_size=10)  # Publish current arm pose
+        self.ik_pub_current_arm_pose = rospy.Publisher('sawyer_ik_sorting/sawyer_arm/pose/current', PoseGrippMessage, queue_size=10)  # Publish current arm pose
 
         self.ik_sub_locating_object_done = rospy.Subscriber('ui/new_object/state/is_located', Bool, callback=self.send_current_pose_callback, queue_size=10)  
 
@@ -87,10 +89,18 @@ class IKSolver:
         
         ik_sub_shutdown = rospy.Subscriber('sawyer_ik_solver/change_to_state/shudown', Bool, callback=self.shutdown_callback, queue_size=10)  # Topic where main_gui tells solver to shutdown
 
-        #  Move to default position when the ik solver is initially launched
+        #  Set up arm, cuff and gripper
         self.sawyer_arm = intera_interface.Limb('right')
-        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed) 
+        self.sawyer_gripper = intera_interface.Gripper()
+        self.sawyer_cuff = intera_interface.Cuff(limb='right')
         
+        #  Move to default position when the ik solver is initially launched
+        self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed) 
+        self.sawyer_gripper.open()
+
+        self.sawyer_cuff.register_callback(self.cuff_open_gripper_callback, '{0}_button_upper'.format('right'))
+        self.sawyer_cuff.register_callback(self.cuff_close_gripper_callback, '{0}_button_lower'.format('right'))
+
         rospy.spin()
 
 
@@ -99,6 +109,7 @@ class IKSolver:
     #  NOTE This function will retun True if a path was found or False if it failed
     def flex_ik_service_client(self, i_Limb="right", i_Pose=None, i_UseAdvanced=False):
         
+
         if self.is_adding_new_item == True:  # Can't move if user is in close proximity manually moving the arm
             return False
 
@@ -113,13 +124,17 @@ class IKSolver:
         ik_ServiceReq = SolvePositionIKRequest()  # Create a request message that will give us the inverse kinematics for some set of joints (Note that this is done at compile time) 
         msg_header = Header(stamp=rospy.Time.now(), frame_id='base')  # Generates a Header for the message (Think of HTTP)
 
+        #  Hover over the object
+        hover_pose = copy.deepcopy(i_Pose)
+        hover_pose.position.z = hover_pose.position.z + self.hover_dist #  hover over the object
+
         #  Set the goal positions for the limb that we specified (I'm pretty sure that it's for the last joint right_j6)
         #  Set the header that we time stamped 
         #  Add Pose object that contains a Point and Quaternion 
         goal_positions = {
             'right': PoseStamped(
                 header=msg_header,
-                pose=i_Pose
+                pose=hover_pose
             ),
         }
 
@@ -171,8 +186,6 @@ class IKSolver:
             ik_ServiceReq.nullspace_goal.append(goal) 
 
             ik_ServiceReq.nullspace_gain.append(0.4)
-        # else:
-        #     rospy.loginfo("Using Simple IK Solver")
 
 
         ##############################################################################################
@@ -189,8 +202,6 @@ class IKSolver:
             rospy.logerr("Service Call Failed: %s" % (ex,))
             return False
 
-        # rospy.loginfo("Advanced IKService Solver Running... ")
-
 
         #  Check if the result is valid, and what seed was used to obtain the solution
         if (response.result_type[0] > 0):
@@ -205,16 +216,11 @@ class IKSolver:
             #  Format the joints such that they can be passed to the robot by making a Limb-API complient dictionary
             joint_solution = dict(zip(response.joints[0].name, response.joints[0].position))
 
-            # rospy.loginfo("\nIK Joint Solution:\n%s", joint_solution)
-            # rospy.loginfo("------------------")
-            # rospy.loginfo("Response Message:\n%s", response)
-
-            # rospy.loginfo("Moving To Target Pose...")
-
             #  Move the limb into the final position
             self.sawyer_arm = intera_interface.Limb(i_Limb)
             self.sawyer_arm.set_joint_position_speed(self.arm_speed)  # Max ratio of joint speed is 0.2 (pretty slow)
             self.sawyer_arm.move_to_joint_positions(joint_solution)
+
             rospy.sleep(0.01)
         else:
             rospy.logerr("INVALID POSE - Unable to find POSE")
@@ -237,14 +243,28 @@ class IKSolver:
         self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
         rospy.sleep(2)
 
+        # hover_pose = copy.deepcopy(data.msg_object_pose)
+        # hover_pose.position.z = data.msg_object_pose.position.z + 0.05 #  hover over the object
+
+
         #  Move to the object which will be picked up
         if self.flex_ik_service_client(i_Pose=data.msg_object_pose, i_UseAdvanced=True):
             rospy.loginfo("Route to object was successfully executed")
+            
+            print("Hovering")
+            #  Approach the object and pick it up
+            self.servo_and_pickup_object(final_pose=data.msg_object_pose)
+            self._close_gripper(data.gripper_position)  # Close gripper my amount specified from sortable object
+            rospy.sleep(0.1)
+            self.retract_from_object(data.msg_object_pose)  # Retract arm form object
             rospy.sleep(2)  # Sleep to simulate object being picked up
+
         else:
             data.successful_sort = False  # Set member data to false since the sort failed
             self.ik_pub_sorted.publish(data)  # Send object which has failed
+            self._open_gripper()  # Reset gripper
             rospy.sleep(2)
+
             
             #  Inform user of failure 
             object_name = data.object_name
@@ -265,6 +285,8 @@ class IKSolver:
         if self.flex_ik_service_client(i_Pose=data.msg_container_pose, i_UseAdvanced=True):
             rospy.loginfo("Route to container was successfully executed")
             
+            self._open_gripper()  # Release object over container
+
             self.ik_pub_sorted.publish(data)
             rospy.sleep(2)
         else:
@@ -286,6 +308,75 @@ class IKSolver:
 
 
 
+    ##  This method will be used to approach an object and grab it
+    def servo_and_pickup_object(self, final_pose, time=4.0, steps=600):
+        #  Slow the robot down a bit
+        self.sawyer_arm.set_joint_position_speed(0.12)
+
+        #  Get the current position of the gripper/arm
+        # hover_pose = self.sawyer_arm.endpoint_pose()
+        # r = rospy.Rate(1/(time/steps))  # Reset do default publishing rate with a timeout of 4
+
+        rospy.sleep(1)
+
+        #  Calculate differance between the current position and the desired end position
+        angles = self.sawyer_arm.ik_request(final_pose)
+        self.sawyer_arm.move_to_joint_positions(angles) 
+
+        rospy.sleep(1)
+
+        # rospy.sleep(0.4)
+        # self._close_gripper(0.0065)  # Grab object
+        # rospy.sleep(0.5)
+
+        # self.retract_from_object(final_pose)
+
+
+
+    ##  Moves the arm away from the object in a linear fation, it will move back to the hover pose
+    def retract_from_object(self, current_pose):
+        #  Get joint angles for hover pose
+        return_pose = current_pose
+        return_pose.position.z = return_pose.position.z + self.hover_dist
+
+        return_angles = self.sawyer_arm.ik_request(return_pose)
+        self.sawyer_arm.move_to_joint_positions(return_angles)
+
+
+
+    ##  Closes the gripper to some degree
+    def _close_gripper(self, degree=0):
+        self.sawyer_gripper.close(degree)
+        print(self.sawyer_gripper.get_force())
+        self.sawyer_gripper.set_holding_force(3.0)
+        rospy.sleep(0.01)
+
+
+
+    ##  Opens the gripper
+    def _open_gripper(self):
+        self.sawyer_gripper.open()
+        rospy.sleep(0.01)
+
+
+
+
+    ##  Callback invoked when user uses cuff to open with gripper
+    def cuff_open_gripper_callback(self, value):
+        if value and self.sawyer_gripper.is_ready():
+            self.sawyer_gripper.open()
+
+
+
+    ## Callback invoked when user uses cuff to close gripper
+    def cuff_close_gripper_callback(self, value):
+        if value and self.sawyer_gripper.is_ready():
+            current_position = self.sawyer_gripper.get_position()
+            print(current_position)
+            if current_position != 0:
+                self.sawyer_gripper.close(current_position-0.01)
+
+
 
     ##  Simple callback that prevents the robot from doing any sorting while human is working with it
     def disable_sorting_capability_callback(self, msg):
@@ -298,6 +389,23 @@ class IKSolver:
 
         #  Reset the has_returned_home flag once the user is done moving the arm manually
         if msg.data == False and self.has_returned_home == True:
+            arm_pose = self.sawyer_arm.endpoint_pose()
+
+            print(arm_pose)
+
+            current_pose = Pose()
+            current_pose.position.x = arm_pose['position'].x
+            current_pose.position.y = arm_pose['position'].y
+            current_pose.position.z = arm_pose['position'].z + self.hover_dist
+            current_pose.orientation.x = arm_pose['orientation'].x
+            current_pose.orientation.y = arm_pose['orientation'].y
+            current_pose.orientation.z = arm_pose['orientation'].z
+            current_pose.orientation.w = arm_pose['orientation'].w
+
+            #  Move away from the current location without pushing over the object
+            self._open_gripper()
+            self.retract_from_object(current_pose)
+            self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # Move the arm to default
             self.has_returned_home = False  
 
 
@@ -312,10 +420,13 @@ class IKSolver:
         current_pose.orientation = end_point['orientation']
 
         if self.is_adding_new_item:
-            self.ik_pub_current_arm_pose.publish(current_pose)
+            current_gripper_dist = self.sawyer_gripper.get_position()
+            current_pose_grip = PoseGrippMessage(current_pose, current_gripper_dist)
+            self.ik_pub_current_arm_pose.publish(current_pose_grip)
 
 
-
+    
+    ##  Displays error message to user
     def ik_solver_error_msg(self, errorTitle, errorMsg):
         error_title = "Error: " + errorTitle
         root = tk.Tk()
@@ -324,6 +435,7 @@ class IKSolver:
         root.destroy()
     
 
+    ##  Callback that initiates node shutdown 
     def shutdown_callback(self, data):
         if data == True:
             rospy.signal_shutdown("Main GUI terminated")

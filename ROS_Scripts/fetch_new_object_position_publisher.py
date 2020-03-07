@@ -10,6 +10,7 @@ from intera_examples.msg import PoseGrippMessage
 
 
 
+##  This class is used to publish new positions for objects & containers to the main gui such that it may save it
 class PositionFetcherPublisher:
 
     def __init__(self):
@@ -29,7 +30,6 @@ class PositionFetcherPublisher:
 
 
 
-    ##  TODO: This should also send the PoseGrippMessage since we want to get the gripper config of the object
     ##  This callback will send the final pose to the UI
     def send_final_to_ui(self, data):
         if self.has_finished:

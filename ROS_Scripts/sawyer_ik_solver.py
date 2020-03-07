@@ -243,9 +243,6 @@ class IKSolver:
         self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed)  # The smaller the speed value, the slower the joint movement, note that the movement will stop the moment the timeout is reached
         rospy.sleep(2)
 
-        # hover_pose = copy.deepcopy(data.msg_object_pose)
-        # hover_pose.position.z = data.msg_object_pose.position.z + 0.05 #  hover over the object
-
 
         #  Move to the object which will be picked up
         if self.flex_ik_service_client(i_Pose=data.msg_object_pose, i_UseAdvanced=True):
@@ -254,7 +251,6 @@ class IKSolver:
             #  Approach the object and pick it up
             self.servo_and_pickup_object(final_pose=data.msg_object_pose)
             self._close_gripper(data.gripper_position)  # Close gripper my amount specified from sortable object
-            print("%s has gripper distance %s" % (data.object_name, data.gripper_position))
             rospy.sleep(0.1)
             self.retract_from_object(data.msg_object_pose)  # Retract arm form object
             rospy.sleep(2)  # Sleep to simulate object being picked up

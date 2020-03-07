@@ -194,7 +194,7 @@ class Application(Frame):
                 self.__to_sort_list_lock.release()  # End of critical section
 
                 self.gui_pub_sort_execute_item.publish(next_message)
-                print("Sent Next")
+                
 
 
     
@@ -210,7 +210,7 @@ class Application(Frame):
                 self.__to_sort_list_lock.release()  # Exit critical section
 
                 self.gui_pub_sort_execute_item.publish(next_message)
-                print("Sent item after fail")
+                
 
 
 
@@ -219,7 +219,7 @@ class Application(Frame):
     def finished_sorting_callback(self, state):
         if state.data == True:
             self.is_sorting = False
-            print("All Done")
+            
 
 
 
@@ -244,8 +244,10 @@ class Application(Frame):
 
         is_add_msg = Bool(data=True)
         self.gui_pub_user_is_moving_arm.publish(is_add_msg)
+        new_obj_message = 'Please move the robot arm over an object you wish to add.\n\nOnce you have manually moved the arm over the object, ' \
+        'close the gripper until the object is firmly grasped. \n\nOnce you have done this please click \'OK\''
 
-        prompt = tkMessageBox.askokcancel('Create New object', 'Please move the robot arm over an object you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
+        prompt = tkMessageBox.askokcancel('Create New object', new_obj_message)
         is_add_msg = Bool(data=False)
 
         #  User wants to add new object
@@ -273,7 +275,8 @@ class Application(Frame):
         is_add_msg = Bool(data=True)
         self.gui_pub_user_is_moving_arm.publish(is_add_msg)
 
-        prompt = tkMessageBox.askokcancel('Create New Container', 'Please move the robot arm over a Container you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
+        new_container_message = 'Please move the robot arm over a Container you wish to add.\n\nOnce you have manually moved the arm over the object, please click \'OK\''
+        prompt = tkMessageBox.askokcancel('Create New Container', new_container_message)
         is_add_msg = Bool(data=False)
 
         if prompt == True:

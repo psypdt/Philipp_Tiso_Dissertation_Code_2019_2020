@@ -1,0 +1,7 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+TerminalOptions=bash
+Exec=bash -c "./Desktop/launch_sorting_gui.bashrc"
+Name=Sawyer Sorting Application

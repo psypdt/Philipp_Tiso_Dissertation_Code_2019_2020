@@ -26,6 +26,6 @@ The implementation of the current launch screen is displayed below, this is what
 
 ## Sawyer Functionality
 
-
+<video src="videos/final_gripping_and_approach.m4v" width="320" height="200" controls preload></video>
 ![Sawyer Sorting](videos/final_gripping_and_approach.m4v)
   

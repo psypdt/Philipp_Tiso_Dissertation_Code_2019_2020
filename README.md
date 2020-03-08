@@ -25,5 +25,5 @@ The implementation of the current launch screen is displayed below, this is what
 
 
 ## Sawyer Functionality
-![](videos/final_gripping_and_approach.mp4)
+The `Sawyer` robot will serve as a medium through which we can test how our designed GUI integrates with the functions a robot would need to perform in order to successfully complete a given sorting task. Hence the robot must be capable of **moving towards objects and containers in a 3D space** as well as being able to **pick up objects** as specified by the user of our GUI.
   

@@ -7,12 +7,12 @@ The aim of this project is to construct a Graphical User Interface (GUI) which i
 
 
 ## Implementation Specifications
-This project has been implemented using [`python 2.7`], the final product was deployed on the [`Sawyer`] robot from [`Rethink Robotics`]. 
+This project has been implemented using `python 2.7`, the final product was deployed on the [`Sawyer`] robot from [`Rethink Robotics`]. 
 
 
 
 ## GUI
-The GUI has been implemented using [`python 2.7`] and its corresponding [`TkInter`] package. 
+The GUI has been implemented using `python 2.7` and its corresponding `TkInter` package. 
 
 ### Main Launch screen
 The implementation of the current launch screen is displayed below, this is what the user will see when they first launch the application. For illustration purposes we have provided screen captures of how this looks.
@@ -25,7 +25,5 @@ The implementation of the current launch screen is displayed below, this is what
 
 
 ## Sawyer Functionality
-
-<video src="videos/final_gripping_and_approach.m4v" width="320" height="200" controls preload></video>
 ![Sawyer Sorting](videos/final_gripping_and_approach.m4v)
   

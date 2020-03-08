@@ -26,5 +26,6 @@ The implementation of the current launch screen is displayed below, this is what
 
 ## Sawyer Functionality
 
-![Sawyer Sorting](/videos/final_gripping_and_approach.m4v)
+
+![Sawyer Sorting](videos/final_gripping_and_approach.m4v)
   

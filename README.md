@@ -9,6 +9,9 @@ The aim of this project is to construct a Graphical User Interface (GUI) which i
 ## GUI
 The GUI has been implemented using [`python 2.7`] and its corresponding [`TkInter`] package. 
 
+### Main Launch screen
+The implementation of the current launch screen is displayed below, this is what the user will see when they first launch the application. For illustration purposes we have provided screen captures of how this looks.
+
 ![GUI at application launch](Images/p2_default_main_ui.png)
 ![GUI with expanded batches](Images/p2_expanded_batches.png)
 

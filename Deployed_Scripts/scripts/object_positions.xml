@@ -1,108 +1,87 @@
 <root>
 	
-<object name="red block">
+<object name="blue block">
 	<type>blocks</type>
+	<gripper_distance>0.0026041875</gripper_distance>
 	<position>
-		<x_pos>0.628396204228</x_pos>
-		<y_pos>0.292546766215</y_pos>
-		<z_pos>0.0447914211792</z_pos>
+		<x_pos>0.7467607136</x_pos>
+		<y_pos>0.110939086602</y_pos>
+		<z_pos>0.0448564350426</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.672287180006</x_orient>
-		<y_orient>0.739352178766</y_orient>
-		<z_orient>-0.0370279955285</z_orient>
-		<w_orient>0.00415101193744</w_orient>
+		<x_orient>0.69546383513</x_orient>
+		<y_orient>0.718097972001</y_orient>
+		<z_orient>-0.019947917005</z_orient>
+		<w_orient>-0.0163535085376</w_orient>
+	</orientation>
+</object><object name="red block">
+	<type>blocks</type>
+	<gripper_distance>0.00238097142857</gripper_distance>
+	<position>
+		<x_pos>0.688295752005</x_pos>
+		<y_pos>0.229295736052</y_pos>
+		<z_pos>0.0444175046805</z_pos>
+	</position>
+	<orientation>
+		<x_orient>0.69283503726</x_orient>
+		<y_orient>0.7200791039</y_orient>
+		<z_orient>-0.0382674482509</z_orient>
+		<w_orient>-0.00113915535213</w_orient>
 	</orientation>
 </object><object name="orange block">
 	<type>blocks</type>
+	<gripper_distance>0.00178572857143</gripper_distance>
 	<position>
-		<x_pos>0.568876137331</x_pos>
-		<y_pos>0.113987132334</y_pos>
-		<z_pos>0.0444058451267</z_pos>
+		<x_pos>0.743221563078</x_pos>
+		<y_pos>0.347825768542</y_pos>
+		<z_pos>0.0493126434725</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.695741387584</x_orient>
-		<y_orient>0.717583266337</y_orient>
-		<z_orient>-0.0301946584401</z_orient>
-		<w_orient>0.0103179493515</w_orient>
+		<x_orient>0.725858492388</x_orient>
+		<y_orient>0.686545779473</y_orient>
+		<z_orient>-0.0381428631625</z_orient>
+		<w_orient>0.0181511350956</w_orient>
 	</orientation>
-</object><object name="blue block">
-	<type>blocks</type>
+</object><object name="wide blue rectangle">
+	<type>rectangles</type>
+	<gripper_distance>0.0</gripper_distance>
 	<position>
-		<x_pos>0.740516718126</x_pos>
-		<y_pos>0.182435456642</y_pos>
-		<z_pos>0.0417988445956</z_pos>
+		<x_pos>0.577608700851</x_pos>
+		<y_pos>0.123736083506</y_pos>
+		<z_pos>0.0482231311898</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.696843870068</x_orient>
-		<y_orient>0.716057345167</y_orient>
-		<z_orient>-0.0406364746987</z_orient>
-		<w_orient>0.00437905297974</w_orient>
+		<x_orient>0.999107282713</x_orient>
+		<y_orient>0.0282127868521</y_orient>
+		<z_orient>-0.0300020580398</z_orient>
+		<w_orient>0.00941024984447</w_orient>
 	</orientation>
-</object><object name="yellow block">
-	<type>blocks</type>
+</object><object name="short wooden rectangle">
+	<type>rectangles</type>
+	<gripper_distance>0.0</gripper_distance>
 	<position>
-		<x_pos>0.508555881655</x_pos>
-		<y_pos>0.397285847675</y_pos>
-		<z_pos>0.0497269761522</z_pos>
+		<x_pos>0.456653356495</x_pos>
+		<y_pos>0.133759075288</y_pos>
+		<z_pos>0.0449330408736</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.689686919288</x_orient>
-		<y_orient>0.723139334041</y_orient>
-		<z_orient>-0.036332672033</z_orient>
-		<w_orient>0.00902185509551</w_orient>
+		<x_orient>0.701921187255</x_orient>
+		<y_orient>0.711589190467</y_orient>
+		<z_orient>-0.0301479608091</z_orient>
+		<w_orient>-0.00621058386862</w_orient>
 	</orientation>
-</object><object name="brown block">
-	<type>blocks</type>
+</object><object name="wide orange rectangle">
+	<type>rectangles</type>
+	<gripper_distance>0.0026041875</gripper_distance>
 	<position>
-		<x_pos>0.805722098423</x_pos>
-		<y_pos>0.0554163912041</y_pos>
-		<z_pos>0.0384187856922</z_pos>
+		<x_pos>0.505910708228</x_pos>
+		<y_pos>0.286452099477</y_pos>
+		<z_pos>0.0483947279419</z_pos>
 	</position>
 	<orientation>
-		<x_orient>0.682899212351</x_orient>
-		<y_orient>0.730319208111</y_orient>
-		<z_orient>-0.00933001255481</z_orient>
-		<w_orient>-0.0139810908502</w_orient>
-	</orientation>
-</object><object name="green block">
-	<type>blocks</type>
-	<position>
-		<x_pos>0.733071295655</x_pos>
-		<y_pos>0.412778021162</y_pos>
-		<z_pos>0.0423803356514</z_pos>
-	</position>
-	<orientation>
-		<x_orient>0.698638931143</x_orient>
-		<y_orient>0.714341094969</y_orient>
-		<z_orient>-0.0340875538469</z_orient>
-		<w_orient>0.0214122068748</w_orient>
-	</orientation>
-</object><object name="pink block">
-	<type>blocks</type>
-	<position>
-		<x_pos>0.792955944453</x_pos>
-		<y_pos>0.289761284633</y_pos>
-		<z_pos>0.0424409211896</z_pos>
-	</position>
-	<orientation>
-		<x_orient>0.697517764318</x_orient>
-		<y_orient>0.716147572656</y_orient>
-		<z_orient>-0.0242424926739</z_orient>
-		<w_orient>0.00373151299262</w_orient>
-	</orientation>
-</object><object name="test">
-	<type>vbvvv</type>
-	<gripper_distance />
-	<position>
-		<x_pos>0.644680515015</x_pos>
-		<y_pos>0.336313093276</y_pos>
-		<z_pos>0.139035011561</z_pos>
-	</position>
-	<orientation>
-		<x_orient>0.73829480938</x_orient>
-		<y_orient>0.672086491434</y_orient>
-		<z_orient>-0.0532065865426</z_orient>
-		<w_orient>0.0197378221414</w_orient>
+		<x_orient>0.68592596172</x_orient>
+		<y_orient>0.72703077923</y_orient>
+		<z_orient>-0.0210741832345</z_orient>
+		<w_orient>0.0220839283621</w_orient>
 	</orientation>
 </object></root>

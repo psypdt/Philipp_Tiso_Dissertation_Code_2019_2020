@@ -81,6 +81,7 @@ class RosContainerTab(ttk.Frame):
         self.selected_objects_textbox.config(state="disabled")
         self.selected_objects_textbox.pack(side="left", fill="y")
 
+
         #  Configure scroll commands
         self.horizontal_textbox_scroll.config(command=self.selected_objects_textbox.xview)
         self.vertical_textbox_scroll.config(command=self.selected_objects_textbox.yview)
@@ -223,7 +224,7 @@ class RosContainerTab(ttk.Frame):
 
             new_selection = tk.Checkbutton(batch_widget.sub_frame, text=new_obj_name, variable=new_obj_val, onvalue=1, offvalue=0)
             new_selection.bind("<Button-1>", self.update_selected_toggled_objects_state)
-            # new_selection.pack(anchor="w")
+            new_selection.pack(anchor="w")
             new_selection.pack()
 
             self.m_object_checkbox_state_list.append(new_obj_val)

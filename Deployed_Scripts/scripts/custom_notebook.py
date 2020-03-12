@@ -281,8 +281,10 @@ class CustomNotebook(ttk.Notebook):
             obj_position.orientation.z = float(oz)
             obj_position.orientation.w = float(ow)
 
+            obj_gripper_distance = float(et_element.find('./gripper_distance').text)
 
-        sortable = SortableObject(obj_name=name, obj_position=obj_position, batch_type=obj_batch_type)
+
+        sortable = SortableObject(obj_name=name, obj_position=obj_position, batch_type=obj_batch_type, gripper_distance=obj_gripper_distance)
 
         return sortable
 

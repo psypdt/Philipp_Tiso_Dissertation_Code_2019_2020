@@ -22,6 +22,7 @@ from psypdt_dissertation.msg import PoseGrippMessage
 from sortable_object_class import SortableObject
 from live_sorting_progress_view_class import LiveViewFrame
 from create_new_localised_object import ObjectLocationInputBox 
+from waypoints_class import Waypoints
 
 import xml.etree.ElementTree as ET
 import threading
@@ -63,9 +64,12 @@ class Application(Frame):
         self.is_sorting = False  # This flag will be used to stop the user from adding items while the sorting task is executing
         self.is_creating_container = False  #  This flag will change depending on what type of additon the user is making (object or container)
 
+        self.waypoints = None
+
+
         #  Graphics initialization
         Frame.__init__(self, master)
-        self.master.minsize(830,500)
+        self.master.minsize(830,520)
 
         #  Create Notebook 
         self.notebook = CustomNotebook()
@@ -94,25 +98,38 @@ class Application(Frame):
         self.run = ttk.Button(self.sorting_command_frame, text="RUN SORTING TASK", style="WR.TButton", command=self.send_object_to_sort)
         self.run.pack(side='top', ipadx=10, padx=10)
 
-        #  Pressing this button will immediatly halt the sorting 
-        # self.stop_sorting_button = tk.Button(self.sorting_command_frame, text="ABORT SORTING", bg='orange', width=18, command=self.abort_sorting_task)
-        # self.stop_sorting_button.pack(side='bottom', ipadx=10, padx=30)
-
         self.sorting_command_frame.pack(side='left', ipadx=10)
+
+
+        # Add frame for the waypoint functionality
+        self.waypoint_frame = Frame(self)
+
+         #  Pressing this button allow the user to set waypoints
+        self.waypoint_set_button = tk.Button(self.waypoint_frame, text="Add Waypoint", bg='orange', width=15, command=self.create_waypoints_callback)
+        self.waypoint_set_button.pack(side='bottom', ipadx=10, padx=8)
+
+        # Button to run the waypoint
+        self.waypoint_play_button = tk.Button(self.waypoint_frame, text="Run Waypoint", bg="red", fg="white", width=15, command=self.run_waypoints_callback)
+        self.waypoint_play_button.pack(side='bottom', ipadx=10, padx=8)
+        
+        self.waypoint_frame.pack(side="right", ipadx=10)
 
 
         #  Add container, use tk. button to do coloring
         # self.add_container_button = tk.Button(self, bg='#3adee0', text="Add Container", command= lambda: self.create_tab(self.notebook))
-        self.add_container_button = ttk.Button(self, text="Add Container", command= lambda: self.create_tab(self.notebook))
+        self.add_container_button = ttk.Button(self, text="Activate Existing Container", width=18, command= lambda: self.create_tab(self.notebook))
         self.add_container_button.pack(side='left', ipadx=10, padx=20)
 
+        self.registration_frame = Frame(self)
 
         #  Create Objects & Containers
-        self.locate_object_button = ttk.Button(self, text="Create new object", command=self.add_new_object_pose)
-        self.locate_object_button.pack(side='right', ipadx=10, padx=20)
+        self.locate_object_button = ttk.Button(self.registration_frame, text="Register New Object", width=17, command=self.add_new_object_pose)
+        self.locate_object_button.pack(side='top', ipadx=10, padx=20)
 
-        self.create_new_container_button = ttk.Button(self, text="Create new container", command=self.add_new_container_pose)
-        self.create_new_container_button.pack(side='right', ipadx=10, padx=20)
+        self.create_new_container_button = ttk.Button(self.registration_frame, text="Register New Container", width=17, command=self.add_new_container_pose)
+        self.create_new_container_button.pack(side='bottom', ipadx=10, padx=20)
+
+        self.registration_frame.pack(side="right", ipadx=10)
 
 
 
@@ -121,7 +138,6 @@ class Application(Frame):
     def send_object_to_sort(self):
         #  Prevent user from trying to spam the sort button
         if self.is_sorting == True:
-            print("Is sorting, cant initiate new sorting task")
             return
 
         self.is_sorting = True  # Set flag to indicate that sorting is in progress
@@ -163,21 +179,6 @@ class Application(Frame):
         #  Clear the list
         del self.objects_to_send_list[:]
         
-        #  Send the first item to the IK solver
-        # if len(self.objects_to_send_list) > 0:
-        #     #  Tell user to not approach robot while sorting, do this on seperate thread
-        #     warning_title = "Initiate Sorting!"
-        #     warning_message = "Press 'OK' to start sorting! \n\nDo not approach the robot unless you have stopped the sorting task!"
-        #     self.show_important_warning_msg(warning_title, warning_message)
-
-        #  Here we would prompt the user to start the task
-
-        #     #  Send to IK solver
-        #     first_msg = self.objects_to_send_list.pop()
-        #     self.gui_pub_sort_execute_item.publish(first_msg)
-        #     print("Sent first item")
-        # else:  # There is nothing to sort
-        #     self.is_sorting = False  # Reset flag since there is nothing to sort
                 
 
 
@@ -194,7 +195,7 @@ class Application(Frame):
                 self.__to_sort_list_lock.release()  # End of critical section
 
                 self.gui_pub_sort_execute_item.publish(next_message)
-                print("Sent Next")
+                
 
 
     
@@ -210,7 +211,7 @@ class Application(Frame):
                 self.__to_sort_list_lock.release()  # Exit critical section
 
                 self.gui_pub_sort_execute_item.publish(next_message)
-                print("Sent item after fail")
+                
 
 
 
@@ -219,7 +220,7 @@ class Application(Frame):
     def finished_sorting_callback(self, state):
         if state.data == True:
             self.is_sorting = False
-            print("All Done")
+            
 
 
 
@@ -244,8 +245,10 @@ class Application(Frame):
 
         is_add_msg = Bool(data=True)
         self.gui_pub_user_is_moving_arm.publish(is_add_msg)
+        new_obj_message = 'Please move the robot arm over an object you wish to add.\n\nOnce you have manually moved the arm over the object, ' \
+        'close the gripper until the object is firmly grasped. \n\nOnce you have done this please click \'OK\''
 
-        prompt = tkMessageBox.askokcancel('Create New object', 'Please move the robot arm over an object you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
+        prompt = tkMessageBox.askokcancel('Register New Object', new_obj_message)
         is_add_msg = Bool(data=False)
 
         #  User wants to add new object
@@ -273,7 +276,8 @@ class Application(Frame):
         is_add_msg = Bool(data=True)
         self.gui_pub_user_is_moving_arm.publish(is_add_msg)
 
-        prompt = tkMessageBox.askokcancel('Create New Container', 'Please move the robot arm over a Container you wish to add.\nOnce you have manually moved the arm over the object, please click \'OK\'')
+        new_container_message = 'Please move the robot arm over a Container you wish to add.\n\nOnce you have manually moved the arm over the object, please click \'OK\''
+        prompt = tkMessageBox.askokcancel('Register New Container', new_container_message)
         is_add_msg = Bool(data=False)
 
         if prompt == True:
@@ -294,11 +298,11 @@ class Application(Frame):
     ##  This is a callback which will get the pose of a new object the user wants to add
     def receive_new_object_final_pose_callback(self, pose):
         #  Ask the user to provide a name and type for the object
-        print("Start top level create obj")
+        # print("Start top level create obj")
         self.top_lvl_prompt_window = tk.Toplevel(self.master)
         self.top_lvl_prompt_window.title("Create New Object")
         self.top_lvl_prompt_window.minsize(300,80)
-        print("End top level create obj")
+        # print("End top level create obj")
 
         #  If the user is adding a container choose tehe appropriate input box
         if self.is_creating_container:
@@ -343,23 +347,49 @@ class Application(Frame):
         
         
 
+    ##  Use the waypoints functionality
+    def create_waypoints_callback(self):
+        if not self.is_sorting:
+            name = "Waypoint Instructions"
+            instructions = "Waypoints are used to create a path the robot will follow.\n\nMove the arm into a position, click the large gray wheel to remember the point.\
+                    \n\nYou may need to save multiple points to construct a path for the robot.\n\nOnce you have constructed a path, press the Square button to save the path, or the circle to resart.\
+                    \n\nPress 'OK' to start."
+            
+            self.show_important_warning_msg(name, instructions) 
+            self.waypoint_play_button.configure(bg='green')  # Signal to the user that the button can be used
+            
+            self.waypoints = Waypoints(speed=0.24, timeout=3)
+            self.waypoints.record()
+
+
+
+    ##  Callback to run the waypoints
+    def run_waypoints_callback(self):
+        if not self.is_sorting  and self.waypoints != None:
+            self.waypoints.playback()
+        else:
+            error_name = "No Waypoint"
+            description = "There is no waypoint which can be executed!\n\nTry creating on with the 'Add Waypoint' button."
+            self.error_popup_msg(error_name, description)
+
+
 
 
     ##  This method will create a popup if some error occures
     def error_popup_msg(self, error_name, error_msg):
         title = "Error: " + str(error_name)
-        print("Start error")
+        # print("Start error")
         tkMessageBox.showerror(title, error_msg)
-        print("Finished error")
+        # print("Finished error")
 
 
 
     ##  This method will display a warning popup
     def show_important_warning_msg(self, warning_name, warning_msg):
         title = "Warning: " + str(warning_name)
-        print("Start warning")
+        # print("Start warning")
         tkMessageBox.showwarning(title, warning_msg)
-        print("Finished warning")
+        # print("Finished warning")
 
     
 

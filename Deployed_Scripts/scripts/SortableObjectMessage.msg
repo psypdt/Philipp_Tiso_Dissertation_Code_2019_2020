@@ -1,6 +1,0 @@
-string object_name
-string container_name
-geometry_msgs/Pose msg_object_pose
-geometry_msgs/Pose msg_container_pose
-bool successful_sort
-float64 gripper_position

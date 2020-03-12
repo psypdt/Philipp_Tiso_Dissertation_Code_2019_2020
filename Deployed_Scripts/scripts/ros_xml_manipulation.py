@@ -59,8 +59,9 @@ def generate_xml_from_data(name, obj_type, pose, gripper_dist):
         formatted_type = str(obj_type).lower()  # Format the type to make letter cases irrelevant
         tag_type.text = formatted_type
 
+        #  Create gripper position tag
         gripper_distance = SubElement(tag_object, 'gripper_distance')
-        gripper_distance.text = 0.000 
+        gripper_distance.text = str(gripper_dist)  # Must be a string so we can serialize it
 
     #  Generate xml from position data
     generate_xml_from_pos(pose, tag_object)

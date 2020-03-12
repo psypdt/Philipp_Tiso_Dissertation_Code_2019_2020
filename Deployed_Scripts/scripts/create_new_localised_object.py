@@ -90,7 +90,7 @@ class ObjectLocationInputBox(ttk.Frame):
             tkMessageBox.showwarning("Object overwrite!", "Warning: the object %s exists already!" % new_name)
             return
 
-        
+        print("create_new: Pose = %s \nGripper = %s" % (self.new_pose, self.gripper_dist))
         RXM.append_to_xml_file(filename="object_positions", name=new_name, obj_type=new_type, pose=self.new_pose, gripper_dist=self.gripper_dist)
 
         if self.p_notebook != None:

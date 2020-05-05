@@ -297,11 +297,11 @@ class IKSolver:
             rospy.loginfo("Route to container was successfully executed")
             
             self._open_gripper()  # Release object over container
-            self.ik_pub_sorted.publish(data)
-
             rospy.sleep(0.5)
 
             self.sawyer_arm.move_to_neutral(timeout=self.arm_timeout, speed=self.arm_speed) # Move back to default
+            self.ik_pub_sorted.publish(data)
+
         else:
             data.successful_sort = False
             self.ik_pub_sorted.publish(data)  # Publish the failed object to the sorted topic, live view will inspect successful_sort and handle it
@@ -355,7 +355,7 @@ class IKSolver:
     ##  Closes the gripper to some degree
     def _close_gripper(self, degree=0):
         self.sawyer_gripper.close(degree)
-        self.sawyer_gripper.set_holding_force(3.0)
+        # self.sawyer_gripper.set_holding_force(3.0)
         rospy.sleep(0.01)
 
 

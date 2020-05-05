@@ -105,11 +105,11 @@ class Application(Frame):
         self.waypoint_frame = Frame(self)
 
          #  Pressing this button allow the user to set waypoints
-        self.waypoint_set_button = tk.Button(self.waypoint_frame, text="Add Waypoint", bg='orange', width=15, command=self.create_waypoints_callback)
+        self.waypoint_set_button = tk.Button(self.waypoint_frame, text="Create Path", bg='orange', width=15, command=self.create_waypoints_callback)
         self.waypoint_set_button.pack(side='bottom', ipadx=10, padx=8)
 
         # Button to run the waypoint
-        self.waypoint_play_button = tk.Button(self.waypoint_frame, text="Run Waypoint", bg="red", fg="white", width=15, command=self.run_waypoints_callback)
+        self.waypoint_play_button = tk.Button(self.waypoint_frame, text="Execute Path", bg="red", fg="white", width=15, command=self.run_waypoints_callback)
         self.waypoint_play_button.pack(side='bottom', ipadx=10, padx=8)
         
         self.waypoint_frame.pack(side="right", ipadx=10)
@@ -167,7 +167,7 @@ class Application(Frame):
             top_lvl_window = tk.Toplevel(self.master)
             top_lvl_window.title("Live Sorting Progress")
             top_lvl_window.minsize(550,400)
-            live_sort_window = LiveViewFrame(top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects())
+            live_sort_window = LiveViewFrame(top_lvl_window, i_all_containers=self.notebook.m_all_open_tabs_dict.keys(), i_selected_objects=self.get_selected_objects(), waypoints=self.waypoints)
         else:
             self.is_sorting = False 
             return
@@ -221,7 +221,6 @@ class Application(Frame):
         if state.data == True:
             self.is_sorting = False
             
-
 
 
 
@@ -298,11 +297,9 @@ class Application(Frame):
     ##  This is a callback which will get the pose of a new object the user wants to add
     def receive_new_object_final_pose_callback(self, pose):
         #  Ask the user to provide a name and type for the object
-        # print("Start top level create obj")
         self.top_lvl_prompt_window = tk.Toplevel(self.master)
-        self.top_lvl_prompt_window.title("Create New Object")
+        self.top_lvl_prompt_window.title("Register New Object")
         self.top_lvl_prompt_window.minsize(300,80)
-        # print("End top level create obj")
 
         #  If the user is adding a container choose tehe appropriate input box
         if self.is_creating_container:
@@ -324,26 +321,6 @@ class Application(Frame):
             for item in container.m_selected_objects_dict.keys():
                 selected_obj_list.append(item)
         return selected_obj_list
-
-
-
-    ##  This method is called when the sorting task must be halted immediatly
-    def abort_sorting_task(self):
-        #  Can't abort if there is no sorting, or if abort was already emitted
-        if self.is_sorting == False: 
-            return
-        
-        self.is_sorting = False  # Set this to false to stop sending more objects
-        
-        #  Need thread safe way to remove all items from queue
-        self.__to_sort_list_lock.acquire()
-        del self.objects_to_send_list[:]  # Clear the list so that there is nothing left to sort
-        self.__to_sort_list_lock.release()
-        print("List after abort is: %s" % self.objects_to_send_list)
-
-        state = Bool(data=True)
-        self.gui_pub_abort_sorting.publish(state)  # Notify live view that task has been aborted
-        print("Sent abort")
         
         
 
@@ -352,24 +329,24 @@ class Application(Frame):
         if not self.is_sorting:
             name = "Waypoint Instructions"
             instructions = "Waypoints are used to create a path the robot will follow.\n\nMove the arm into a position, click the large gray wheel to remember the point.\
-                    \n\nYou may need to save multiple points to construct a path for the robot.\n\nOnce you have constructed a path, press the Square button to save the path, or the circle to resart.\
-                    \n\nPress 'OK' to start."
+                    \n\nYou may need to save multiple points to construct a path for the robot.\n\nOnce you have constructed a path, press the Rethink button to finish and save.\
+                    \n\nAlternatively, press the circle to reset the path to nothing. \n\nPress 'OK' to start."
             
             self.show_important_warning_msg(name, instructions) 
             self.waypoint_play_button.configure(bg='green')  # Signal to the user that the button can be used
             
-            self.waypoints = Waypoints(speed=0.24, timeout=3)
+            self.waypoints = Waypoints(speed=0.28, timeout=3)
             self.waypoints.record()
 
 
 
     ##  Callback to run the waypoints
     def run_waypoints_callback(self):
-        if not self.is_sorting  and self.waypoints != None:
+        if not self.is_sorting  and self.waypoints != None and len(self.waypoints.waypoints) > 0:
             self.waypoints.playback()
         else:
-            error_name = "No Waypoint"
-            description = "There is no waypoint which can be executed!\n\nTry creating on with the 'Add Waypoint' button."
+            error_name = "No Path!"
+            description = "There is no path which can be executed!\n\nTry creating on with the 'Create Path' button."
             self.error_popup_msg(error_name, description)
 
 
@@ -378,18 +355,16 @@ class Application(Frame):
     ##  This method will create a popup if some error occures
     def error_popup_msg(self, error_name, error_msg):
         title = "Error: " + str(error_name)
-        # print("Start error")
         tkMessageBox.showerror(title, error_msg)
-        # print("Finished error")
+
 
 
 
     ##  This method will display a warning popup
     def show_important_warning_msg(self, warning_name, warning_msg):
         title = "Warning: " + str(warning_name)
-        # print("Start warning")
         tkMessageBox.showwarning(title, warning_msg)
-        # print("Finished warning")
+        
 
     
 

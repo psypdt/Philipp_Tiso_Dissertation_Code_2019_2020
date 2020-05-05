@@ -7,7 +7,7 @@ The aim of this project is to construct a Graphical User Interface (GUI) which i
 
 
 ## Implementation Specifications
-This project has been implemented using `python 2.7`, the final product was deployed on the [`Sawyer`] robot from [`Rethink Robotics`]. 
+This project has been implemented using `python 2.7` and `ROS Kinetic`, the final product was deployed on the [`Sawyer`] robot from [`Rethink Robotics`]. 
 
 
 

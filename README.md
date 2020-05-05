@@ -17,7 +17,7 @@ The GUI has been implemented using `python 2.7` and its corresponding `TkInter` 
 ### Main Launch screen
 The implementation of the current launch screen is displayed below, this is what the user will see when they first launch the application. For illustration purposes we have provided screen captures of how this looks.
 
-![GUI at application launch](Images/p3_default_main_gui.png)
+![GUI at application launch](Images/p3_default_main_ui.png)
 ![GUI with expanded batches](Images/p3_expanded_batches.png)
 
 

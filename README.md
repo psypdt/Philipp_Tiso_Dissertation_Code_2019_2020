@@ -25,5 +25,5 @@ The implementation of the current launch screen is displayed below, this is what
 
 
 ## Sawyer Functionality
-The `Sawyer` robot will serve as a medium through which we can test how our designed GUI integrates with the functions a robot would need to perform in order to successfully complete a given sorting task. Hence the robot must be capable of **moving towards objects and containers in a 3D space** as well as being able to **pick up objects** as specified by the user of our GUI.
+The `Sawyer` robot will serve as a medium through which we can test how our designed GUI integrates with the functions a robot would need to perform in order to successfully complete a given sorting task. Hence the robot must be capable of **moving towards objects and containers in a 3D space** as well as being able to **pick up objects** as specified by the user of our GUI. Users can use the GUI to introduce new objects and containers to the system, while also being able to construct custom paths which the robot will follow when instructed to do so.
   
